@@ -44,7 +44,12 @@ export function MatchesPortal({ jobs, count, live, error, busy, onFilter, onOpen
         {jobs.map((job) => (
           <li key={job.id}>
             <button type="button" className="job-card" onClick={() => onOpen(job.id)}>
-              <span className={`score score-${matchTone(job.match_score)}`}>{job.match_score}%</span>
+              <span className="job-card-top">
+                <span className="company-mark" aria-hidden>
+                  {(job.company || 'O').slice(0, 1)}
+                </span>
+                <span className={`score score-${matchTone(job.match_score)}`}>{job.match_score}% match</span>
+              </span>
               <h3>{job.title}</h3>
               <p>
                 {job.company} · {job.location}

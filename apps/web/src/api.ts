@@ -125,6 +125,16 @@ export function fetchStats() {
   return api<{ jobs: number; candidates: number; applications: number }>('/v1/stats')
 }
 
+export function sendInquiry(body: {
+  company: string
+  contact_name: string
+  email: string
+  role?: string
+  message: string
+}) {
+  return api<{ id: number; created_at: string }>('/v1/inquiries', { method: 'POST', body: JSON.stringify(body) })
+}
+
 export function signup(body: { email: string; password: string; full_name: string }) {
   return api<AuthResponse>('/v1/auth/signup', { method: 'POST', body: JSON.stringify(body) })
 }

@@ -91,11 +91,12 @@ export function AdminPortal({ authed, jobs, error, busy, pin, onPin, onLogin, on
 export function PrivacyPortal() {
   return (
     <div className="portal">
+      <p className="eyebrow">Legal</p>
       <h1>Privacy</h1>
-      <p>
-        OpenPath stores your account, resume text, and application statuses so you can match jobs and
-        track progress. Resumes are parsed on the server and saved as text in the database. We do not
-        sell candidate data. Delete requests: email the office from the address on your profile.
+      <p className="lede">
+        OpenPath stores your account, resume text, hiring briefs, and application statuses so we
+        can match roles and run searches. Resume files are parsed on the server and saved as text.
+        We do not sell candidate data. To request deletion, write from the email on your profile.
       </p>
     </div>
   )

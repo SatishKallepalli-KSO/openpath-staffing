@@ -296,11 +296,33 @@ export async function initDb() {
       max: 4,
     })
     await pool.query(PG_SCHEMA)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS inquiries (
+        id SERIAL PRIMARY KEY,
+        company TEXT NOT NULL,
+        contact_name TEXT NOT NULL,
+        email TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT '',
+        message TEXT NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `)
   } else {
     const { DatabaseSync } = await import('node:sqlite')
     fs.mkdirSync(DATA_DIR, { recursive: true })
     sqlite = new DatabaseSync(SQLITE_PATH)
     sqlite.exec(SQLITE_SCHEMA)
+    sqlite.exec(`
+      CREATE TABLE IF NOT EXISTS inquiries (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        company TEXT NOT NULL,
+        contact_name TEXT NOT NULL,
+        email TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT '',
+        message TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      )
+    `)
   }
   await seedJobs()
   await seedDemoUser()

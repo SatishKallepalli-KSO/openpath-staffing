@@ -142,6 +142,28 @@ app.get('/v1/stats', async (_req, res) => {
   }
 })
 
+app.post('/v1/inquiries', rateLimit({ max: 6, windowSec: 3600, key: 'inquiry' }), async (req, res) => {
+  try {
+    const company = String(req.body?.company || '').trim()
+    const contact_name = String(req.body?.contact_name || '').trim()
+    const email = String(req.body?.email || '').trim().toLowerCase()
+    const role = String(req.body?.role || '').trim().slice(0, 160)
+    const message = String(req.body?.message || '').trim().slice(0, 4000)
+    if (company.length < 2 || contact_name.length < 2 || !email.includes('@') || message.length < 20) {
+      res.status(400).json({ detail: 'Company, name, email, and a short brief are required.' })
+      return
+    }
+    const row = await queryOne(
+      `INSERT INTO inquiries (company, contact_name, email, role, message, created_at)
+       VALUES ($1,$2,$3,$4,$5,$6) RETURNING id, created_at`,
+      [company.slice(0, 160), contact_name.slice(0, 120), email.slice(0, 180), role, message, nowIso()],
+    )
+    res.status(201).json({ id: row.id, created_at: row.created_at })
+  } catch (err) {
+    fail(res, err)
+  }
+})
+
 app.post('/v1/auth/signup', rateLimit({ max: 8, windowSec: 3600, key: 'signup' }), async (req, res) => {
   try {
     const user = await createUser(req.body || {})
@@ -499,6 +521,15 @@ app.post('/v1/admin/login', rateLimit({ max: 8, windowSec: 900, key: 'admin' }),
 app.get('/v1/admin/jobs', requireAdmin, async (_req, res) => {
   try {
     const rows = await query('SELECT * FROM jobs ORDER BY id DESC LIMIT 200')
+    res.json(rows)
+  } catch (err) {
+    fail(res, err)
+  }
+})
+
+app.get('/v1/admin/inquiries', requireAdmin, async (_req, res) => {
+  try {
+    const rows = await query('SELECT * FROM inquiries ORDER BY id DESC LIMIT 100')
     res.json(rows)
   } catch (err) {
     fail(res, err)

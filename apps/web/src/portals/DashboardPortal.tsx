@@ -51,7 +51,7 @@ export function DashboardPortal({ data, error, onGo }: Props) {
       </section>
 
       <div className="split">
-        <section>
+        <section className="panel">
           <h2>Best matches right now</h2>
           {!has_resume ? (
             <p className="muted">Upload a resume to score jobs against your skills.</p>
@@ -65,7 +65,7 @@ export function DashboardPortal({ data, error, onGo }: Props) {
             </ul>
           )}
         </section>
-        <section>
+        <section className="panel">
           <h2>Recent activity</h2>
           {activity.length === 0 ? (
             <p className="muted">Your applies, tailors, and profile updates will land here.</p>

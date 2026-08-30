@@ -29,6 +29,7 @@ import { BrandMark } from './components/BrandMark'
 import { PortalBack } from './components/PortalBack'
 import { AdminPortal, PrivacyPortal } from './portals/AdminPortal'
 import { DashboardPortal } from './portals/DashboardPortal'
+import { EmployersPortal } from './portals/EmployersPortal'
 import { AboutPortal, AuthPortal, HomePortal } from './portals/HomePortal'
 import { JobPortal, MatchesPortal, TailorPortal } from './portals/MatchesPortal'
 import { ProfilePortal, ResumePortal } from './portals/ProfilePortal'
@@ -37,6 +38,7 @@ import { TrackerPortal } from './portals/TrackerPortal'
 export type Portal =
   | 'home'
   | 'about'
+  | 'employers'
   | 'login'
   | 'signup'
   | 'dashboard'
@@ -52,6 +54,7 @@ export type Portal =
 const PORTALS = new Set<Portal>([
   'home',
   'about',
+  'employers',
   'login',
   'signup',
   'dashboard',
@@ -331,13 +334,10 @@ export default function App() {
   }
 
   const showBack = portal !== 'home'
+  const isMarketing = portal === 'home'
 
   return (
-    <div className="site">
-      <div className="topbar">
-        <span className="topbar-banner">OpenPath Staffing · candidate-first matching</span>
-        <span>Render Free · resume to role to tracker</span>
-      </div>
+    <div className={isMarketing ? 'site site-home' : 'site'}>
       <header className="nav">
         <button type="button" className="brand" onClick={() => go('home')}>
           <BrandMark className="mark" />
@@ -348,20 +348,23 @@ export default function App() {
         </button>
         <nav className="nav-links">
           <button type="button" onClick={() => go('about')}>
-            How it works
+            The firm
+          </button>
+          <button type="button" onClick={() => go('employers')}>
+            Hiring teams
           </button>
           {signedIn ? (
             <>
               <button type="button" onClick={() => go('dashboard')}>
-                Dashboard
+                Desk
               </button>
               <button type="button" onClick={() => go('matches')}>
-                Matches
+                Roles
               </button>
               <button type="button" onClick={() => go('tracker')}>
-                Tracker
+                Pipeline
               </button>
-              <button type="button" onClick={signOut}>
+              <button type="button" className="nav-quiet" onClick={signOut}>
                 Sign out
               </button>
             </>
@@ -370,15 +373,15 @@ export default function App() {
               <button type="button" onClick={() => go('login')}>
                 Sign in
               </button>
-              <button type="button" className="btn btn-primary nav-cta" onClick={() => go('signup')}>
-                Get started
+              <button type="button" className="btn btn-gold nav-cta" onClick={() => go('signup')}>
+                Get placed
               </button>
             </>
           )}
         </nav>
       </header>
-      <main>
-        {showBack ? <PortalBack onBack={() => history.back()} /> : null}
+      <main className={isMarketing ? 'main-home' : 'main-app'}>
+        {showBack ? <PortalBack onBack={() => history.back()} label="Back" /> : null}
         {portal === 'home' ? (
           <HomePortal
             jobs={stats.jobs}
@@ -389,6 +392,7 @@ export default function App() {
           />
         ) : null}
         {portal === 'about' ? <AboutPortal onGo={(p) => go(p as Portal)} /> : null}
+        {portal === 'employers' ? <EmployersPortal onGo={(p) => go(p as Portal)} /> : null}
         {portal === 'login' || portal === 'signup' ? (
           <AuthPortal
             mode={portal}
@@ -488,13 +492,38 @@ export default function App() {
         {portal === 'privacy' ? <PrivacyPortal /> : null}
       </main>
       <footer className="footer">
-        <button type="button" className="linkish" onClick={() => go('privacy')}>
-          Privacy
-        </button>
-        <button type="button" className="linkish" onClick={() => go('admin')}>
-          Office
-        </button>
-        <span>OpenPath Staffing helps people find work with a fair shot.</span>
+        <div className="wrap footer-grid">
+          <div>
+            <BrandMark className="mark" />
+            <p className="footer-brand">OpenPath Staffing</p>
+            <p className="muted">Candidate-first search for a hard market.</p>
+          </div>
+          <div>
+            <p className="footer-label">Talent</p>
+            <button type="button" className="linkish" onClick={() => go('signup')}>
+              Create a profile
+            </button>
+            <button type="button" className="linkish" onClick={() => go('about')}>
+              How matching works
+            </button>
+          </div>
+          <div>
+            <p className="footer-label">Companies</p>
+            <button type="button" className="linkish" onClick={() => go('employers')}>
+              Request a shortlist
+            </button>
+            <button type="button" className="linkish" onClick={() => go('admin')}>
+              Office desk
+            </button>
+          </div>
+          <div>
+            <p className="footer-label">Legal</p>
+            <button type="button" className="linkish" onClick={() => go('privacy')}>
+              Privacy
+            </button>
+          </div>
+        </div>
+        <p className="footer-fine wrap">© {new Date().getFullYear()} OpenPath Staffing. All searches stay truthful.</p>
       </footer>
     </div>
   )
