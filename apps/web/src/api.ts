@@ -74,6 +74,7 @@ export type Job = {
   source: string
   source_url: string
   apply_host?: string
+  apply_via?: string
   can_apply?: boolean
   department: string
   seniority: string
@@ -186,11 +187,17 @@ export type MatchSources = {
   remoteok?: number
   himalayas?: number
   jobicy?: number
+  greenhouse?: number
+  lever?: number
+  amazon?: number
+  nvidia?: number
 }
 
 export type BoardLink = {
   name: string
   url: string
+  blurb?: string
+  kind?: string
 }
 
 export type MatchResult = {

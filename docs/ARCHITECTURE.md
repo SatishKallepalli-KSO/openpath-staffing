@@ -63,8 +63,8 @@ Tailoring (`tailor.js`) only rephrases existing bullets and a skills line. It do
 
 1. Seeded catalog (company-style postings plus SAVENTRA-owned roles)
 2. Admin desk can publish more roles
-3. Live public APIs after resume upload and on `GET /v1/matches`: Remotive, Arbeitnow, The Muse, Remote OK, Himalayas, Jobicy
+3. Live public APIs after resume upload and on `GET /v1/matches`: Remotive, Arbeitnow, The Muse, Remote OK, Himalayas, Jobicy, Greenhouse job boards, Lever, Amazon.jobs, NVIDIA Workday
 4. Optional Adzuna API (`ADZUNA_APP_ID`, `ADZUNA_APP_KEY`)
-5. LinkedIn / Indeed / Google Jobs search links from the resume title (not scraped listings)
+5. Search tiles for LinkedIn, Indeed, Greenhouse, Google, Meta, Oracle, Microsoft, Amazon, and Apple career sites (not scraped listings)
 
-We do not scrape LinkedIn, Indeed, or Greenhouse. Apply records status locally (`POST /v1/applications` and `POST /v1/applications/batch`) and opens `source_url` so the candidate can finish the employer form. We do not POST into a third-party ATS.
+We do not scrape LinkedIn, Indeed, or Greenhouse HTML. Greenhouse and Lever are their official public job-board JSON APIs. Apply records status locally and opens `source_url` so the candidate can finish the employer form. We do not POST into a third-party ATS.

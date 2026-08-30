@@ -28,7 +28,7 @@ import { extractFromUpload, parsedOrThrow } from './resume.js'
 import { parseResume, rankJobs } from './matching.js'
 import { suggestEdits } from './tailor.js'
 import { adzunaEnabled } from './adzuna.js'
-import { applyHost, boardSearchLinks, isLiveApplyUrl, liveFeedsEnabled, refreshLiveJobs, searchQuery } from './job-feeds.js'
+import { applyBrand, applyHost, boardSearchLinks, isLiveApplyUrl, liveFeedsEnabled, refreshLiveJobs, searchQuery } from './job-feeds.js'
 import { rateLimit } from './rate-limit.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -99,6 +99,7 @@ function jobOut(row) {
     source: row.source,
     source_url: row.source_url,
     apply_host: applyHost(row.source_url),
+    apply_via: applyBrand(row.source_url),
     can_apply: isLiveApplyUrl(row.source_url),
     department: row.department,
     seniority: row.seniority,
@@ -341,6 +342,10 @@ app.get('/v1/matches', requireUser, async (req, res) => {
       remoteok: 0,
       himalayas: 0,
       jobicy: 0,
+      greenhouse: 0,
+      lever: 0,
+      amazon: 0,
+      nvidia: 0,
     }
     try {
       const live = await refreshLiveJobs(q)

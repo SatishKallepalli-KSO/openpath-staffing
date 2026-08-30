@@ -701,7 +701,59 @@ textarea {
 }
 
 .board-links {
-  margin: 0 0 1.2rem;
+  margin: 0 0 1.4rem;
+}
+
+.board-links h2 {
+  margin: 0 0 0.4rem;
+  font-family: var(--font-display);
+  font-size: 1.55rem;
+  font-weight: 400;
+}
+
+.board-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-top: 0.85rem;
+}
+
+.board-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.9rem 0.95rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  text-decoration: none;
+  min-height: 5.2rem;
+}
+
+.board-card strong {
+  font-size: 1.02rem;
+}
+
+.board-card span {
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+
+.board-card:hover {
+  border-color: var(--gold);
+}
+
+.board-linkedin {
+  border-color: #0a66c2;
+}
+
+.board-indeed {
+  border-color: #2164f3;
+}
+
+.board-greenhouse {
+  border-color: #1a4731;
 }
 
 .board-link-row {
@@ -1326,6 +1378,7 @@ textarea:focus {
   .pipeline,
   .footer-grid,
   .filter-bar,
+  .board-card-grid,
   .auth-split,
   .manifest {
     grid-template-columns: 1fr;

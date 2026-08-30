@@ -10,6 +10,10 @@ function sourceLine(sources: MatchSources | undefined, live: boolean) {
     ['remoteok', 'Remote OK'],
     ['himalayas', 'Himalayas'],
     ['jobicy', 'Jobicy'],
+    ['greenhouse', 'Greenhouse'],
+    ['lever', 'Lever'],
+    ['amazon', 'Amazon'],
+    ['nvidia', 'NVIDIA'],
     ['adzuna', 'Adzuna'],
   ]
   const parts = labels
@@ -64,14 +68,23 @@ export function MatchesPortal({
       </header>
       {boardLinks?.length ? (
         <div className="board-links">
+          <h2>Search the big boards and career sites</h2>
           <p className="muted">
-            LinkedIn and Indeed do not publish a public jobs API we can list here. These links open a search
-            with your title filled in so you can apply on those sites yourself.
+            LinkedIn and Indeed do not let us list their jobs here. These tiles open their search, plus Google,
+            Meta, Oracle, Microsoft, Amazon, and Apple careers, with your title filled in. Greenhouse, Lever,
+            Amazon, and NVIDIA roles that match also appear in the scored list below.
           </p>
-          <div className="board-link-row">
+          <div className="board-card-grid">
             {boardLinks.map((link) => (
-              <a key={link.name} className="btn btn-ghost" href={link.url} target="_blank" rel="noopener noreferrer">
-                Search {link.name}
+              <a
+                key={link.name}
+                className={`board-card board-${link.kind || 'generic'}`}
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <strong>{link.name}</strong>
+                <span>{link.blurb || 'Open search'}</span>
               </a>
             ))}
           </div>
@@ -109,8 +122,8 @@ export function MatchesPortal({
           const queued = applied.has(job.id)
           const applyLabel = queued
             ? 'Queued'
-            : job.can_apply && job.apply_host
-              ? `Apply on ${job.apply_host}`
+            : job.can_apply
+              ? `Easy Apply · ${job.apply_via || job.apply_host || 'employer'}`
               : 'Apply and track'
           return (
             <li key={job.id}>
@@ -127,7 +140,7 @@ export function MatchesPortal({
                     {job.company} · {job.location}
                   </p>
                   <p className="muted">
-                    {job.remote} · {job.source} · {job.seniority}
+                    {job.remote} · {job.apply_via || job.source} · {job.seniority}
                   </p>
                   <div className="chips">
                     {(job.matched_skills || []).slice(0, 5).map((s) => (
@@ -187,7 +200,9 @@ export function JobPortal({ job, error, busy, onTailor, onSave, onApply }: JobPr
               Save role
             </button>
             <button type="button" className="btn btn-ghost-light" onClick={onApply} disabled={busy}>
-              {job.can_apply && job.apply_host ? `Apply on ${job.apply_host}` : 'Apply and track'}
+              {job.can_apply
+                ? `Easy Apply · ${job.apply_via || job.apply_host || 'employer'}`
+                : 'Apply and track'}
             </button>
           </div>
         </div>

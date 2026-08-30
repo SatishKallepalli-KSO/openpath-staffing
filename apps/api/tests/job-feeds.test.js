@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { boardSearchLinks, isLiveApplyUrl, jobMatchesQuery, searchQuery } from '../src/job-feeds.js'
+import { applyBrand, boardSearchLinks, isLiveApplyUrl, jobMatchesQuery, searchQuery } from '../src/job-feeds.js'
 
 describe('live job query filter', () => {
   it('keeps a software role for an engineer query', () => {
@@ -45,13 +45,30 @@ describe('apply urls and board search', () => {
     assert.equal(isLiveApplyUrl('not-a-url'), false)
   })
 
-  it('builds LinkedIn and Indeed search links from the resume title', () => {
+  it('builds LinkedIn, Indeed, Google, Meta, and Oracle career searches', () => {
     const links = boardSearchLinks('Full stack engineer', 'San Jose, CA')
+    const names = links.map((l) => l.name)
+    assert.ok(names.includes('LinkedIn'))
+    assert.ok(names.includes('Indeed'))
+    assert.ok(names.includes('Greenhouse'))
+    assert.ok(names.includes('Google'))
+    assert.ok(names.includes('Meta'))
+    assert.ok(names.includes('Oracle'))
     const linkedin = links.find((l) => l.name === 'LinkedIn')
-    const indeed = links.find((l) => l.name === 'Indeed')
     assert.ok(linkedin?.url.includes('linkedin.com/jobs/search'))
     assert.ok(linkedin?.url.includes('Full%20stack'))
-    assert.ok(indeed?.url.includes('indeed.com/jobs'))
+    const google = links.find((l) => l.name === 'Google')
+    assert.ok(google?.url.includes('careers.google.com') || google?.url.includes('about/careers'))
+    const meta = links.find((l) => l.name === 'Meta')
+    assert.ok(meta?.url.includes('metacareers.com'))
+    const oracle = links.find((l) => l.name === 'Oracle')
+    assert.ok(oracle?.url.includes('oracle.com'))
+  })
+
+  it('labels Greenhouse, LinkedIn, and Amazon apply destinations', () => {
+    assert.equal(applyBrand('https://job-boards.greenhouse.io/gitlab/jobs/1'), 'Greenhouse')
+    assert.equal(applyBrand('https://www.linkedin.com/jobs/view/123'), 'LinkedIn')
+    assert.equal(applyBrand('https://www.amazon.jobs/en/jobs/1/software-engineer'), 'Amazon')
   })
 
   it('shortens a long resume headline into a job search query', () => {

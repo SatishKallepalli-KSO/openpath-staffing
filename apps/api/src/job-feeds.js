@@ -53,21 +53,81 @@ export function applyHost(url) {
   }
 }
 
+export function applyBrand(url) {
+  const host = applyHost(url).toLowerCase()
+  const href = String(url || '').toLowerCase()
+  if (host.includes('greenhouse') || href.includes('gh_jid')) return 'Greenhouse'
+  if (host.includes('linkedin')) return 'LinkedIn'
+  if (host.includes('indeed')) return 'Indeed'
+  if (host.includes('lever.co')) return 'Lever'
+  if (host.includes('amazon')) return 'Amazon'
+  if (host.includes('myworkdayjobs') || host.includes('workday')) return 'Workday'
+  if (host.includes('oracle')) return 'Oracle'
+  if (host.includes('metacareers') || host.includes('meta.com')) return 'Meta'
+  if (host.includes('apple.com')) return 'Apple'
+  if (host.includes('microsoft')) return 'Microsoft'
+  if (host.includes('google.com') && href.includes('careers')) return 'Google'
+  return host
+}
+
 export function boardSearchLinks(q, location) {
   const keywords = String(q || 'software engineer').slice(0, 80)
   const loc = String(location || 'United States').slice(0, 80)
+  const enc = encodeURIComponent
   return [
     {
       name: 'LinkedIn',
-      url: `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(keywords)}&location=${encodeURIComponent(loc)}`,
+      kind: 'linkedin',
+      blurb: 'Easy Apply search with your title filled in',
+      url: `https://www.linkedin.com/jobs/search/?keywords=${enc(keywords)}&location=${enc(loc)}`,
     },
     {
       name: 'Indeed',
-      url: `https://www.indeed.com/jobs?q=${encodeURIComponent(keywords)}&l=${encodeURIComponent(loc)}`,
+      kind: 'indeed',
+      blurb: 'Same search on Indeed',
+      url: `https://www.indeed.com/jobs?q=${enc(keywords)}&l=${enc(loc)}`,
     },
     {
-      name: 'Google Jobs',
-      url: `https://www.google.com/search?ibp=htl;jobs&q=${encodeURIComponent(`${keywords} ${loc}`)}`,
+      name: 'Greenhouse',
+      kind: 'greenhouse',
+      blurb: 'Company career pages that run on Greenhouse',
+      url: `https://www.google.com/search?q=${enc(`${keywords} site:greenhouse.io OR site:job-boards.greenhouse.io`)}`,
+    },
+    {
+      name: 'Google',
+      kind: 'google',
+      blurb: 'Google careers',
+      url: `https://www.google.com/about/careers/applications/jobs/results/?q=${enc(keywords)}`,
+    },
+    {
+      name: 'Meta',
+      kind: 'meta',
+      blurb: 'Meta careers',
+      url: `https://www.metacareers.com/jobs?q=${enc(keywords)}`,
+    },
+    {
+      name: 'Oracle',
+      kind: 'oracle',
+      blurb: 'Oracle careers',
+      url: `https://careers.oracle.com/en/sites/jobsearch/jobs?keyword=${enc(keywords)}`,
+    },
+    {
+      name: 'Microsoft',
+      kind: 'microsoft',
+      blurb: 'Microsoft careers',
+      url: `https://jobs.careers.microsoft.com/global/en/search?q=${enc(keywords)}`,
+    },
+    {
+      name: 'Amazon',
+      kind: 'amazon',
+      blurb: 'Amazon.jobs',
+      url: `https://www.amazon.jobs/en/search?base_query=${enc(keywords)}`,
+    },
+    {
+      name: 'Apple',
+      kind: 'apple',
+      blurb: 'Apple jobs',
+      url: `https://jobs.apple.com/en-us/search?search=${enc(keywords)}`,
     },
   ]
 }
@@ -99,7 +159,22 @@ function skillsFrom(text) {
 
 async function fetchJson(url) {
   const res = await fetch(url, {
-    headers: { Accept: 'application/json', 'User-Agent': 'SAVENTRA-desk/1.0' },
+    headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0 (compatible; SAVENTRA-desk/1.0)' },
+    signal: AbortSignal.timeout(FETCH_MS),
+  })
+  if (!res.ok) throw new Error(`feed ${res.status}`)
+  return res.json()
+}
+
+async function fetchJsonPost(url, body) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
+      'User-Agent': 'Mozilla/5.0 (compatible; SAVENTRA-desk/1.0)',
+    },
+    body: JSON.stringify(body),
     signal: AbortSignal.timeout(FETCH_MS),
   })
   if (!res.ok) throw new Error(`feed ${res.status}`)
@@ -130,12 +205,12 @@ export async function upsertLiveJob(job) {
       nowIso(),
     ],
   )
-  return row.id
+  return row?.id
 }
 
-async function ingest(jobs, q) {
+async function ingest(jobs, q, max = PER_FEED) {
   const ids = []
-  const filtered = jobs.filter((j) => jobMatchesQuery(j, q)).slice(0, PER_FEED)
+  const filtered = jobs.filter((j) => jobMatchesQuery(j, q)).slice(0, max)
   for (const job of filtered) {
     try {
       const id = await upsertLiveJob(job)
@@ -314,6 +389,159 @@ async function pullJobicy(q) {
   )
 }
 
+const GREENHOUSE_BOARDS = [
+  ['stripe', 'Stripe'],
+  ['gitlab', 'GitLab'],
+  ['datadog', 'Datadog'],
+  ['cloudflare', 'Cloudflare'],
+  ['airbnb', 'Airbnb'],
+  ['discord', 'Discord'],
+  ['figma', 'Figma'],
+  ['airtable', 'Airtable'],
+  ['twilio', 'Twilio'],
+  ['mongodb', 'MongoDB'],
+  ['snowflake', 'Snowflake'],
+  ['pinterest', 'Pinterest'],
+  ['dropbox', 'Dropbox'],
+  ['robinhood', 'Robinhood'],
+  ['coinbase', 'Coinbase'],
+  ['databricks', 'Databricks'],
+  ['doordash', 'DoorDash'],
+  ['lyft', 'Lyft'],
+  ['asana', 'Asana'],
+  ['okta', 'Okta'],
+]
+
+const LEVER_SITES = [
+  ['palantir', 'Palantir'],
+  ['spotify', 'Spotify'],
+]
+
+async function mapLimit(items, limit, fn) {
+  const out = []
+  let i = 0
+  async function worker() {
+    while (i < items.length) {
+      const cur = i++
+      try {
+        out.push(await fn(items[cur]))
+      } catch (err) {
+        console.warn('career board skipped', err.message)
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker))
+  return out.flat()
+}
+
+async function pullGreenhouse(q) {
+  return mapLimit(GREENHOUSE_BOARDS, 5, async ([token, company]) => {
+    const body = await fetchJson(`https://boards-api.greenhouse.io/v1/boards/${token}/jobs`)
+    const rows = Array.isArray(body.jobs) ? body.jobs : []
+    return ingest(
+      rows.map((hit) => {
+        const loc = hit.location?.name || ''
+        return {
+          title: hit.title,
+          company,
+          location: loc || 'United States',
+          remote: /remote/i.test(loc) ? 'remote' : 'hybrid',
+          source: 'greenhouse',
+          source_url: hit.absolute_url,
+          department: hit.departments?.[0]?.name || '',
+          seniority: /senior|staff|principal|director/i.test(hit.title || '') ? 'senior' : 'mid',
+          description: `${company} career posting on Greenhouse.`,
+          requirements: '',
+          posted_at: String(hit.updated_at || hit.created_at || '').slice(0, 10),
+        }
+      }),
+      q,
+      8,
+    )
+  })
+}
+
+async function pullLever(q) {
+  return mapLimit(LEVER_SITES, 2, async ([site, company]) => {
+    const rows = await fetchJson(`https://api.lever.co/v0/postings/${site}?mode=json`)
+    const jobs = Array.isArray(rows) ? rows : []
+    return ingest(
+      jobs.map((hit) => {
+        const loc = hit.categories?.location || ''
+        return {
+          title: hit.text,
+          company,
+          location: loc || 'United States',
+          remote: /remote/i.test(`${loc} ${hit.text}`) ? 'remote' : 'hybrid',
+          source: 'lever',
+          source_url: hit.hostedUrl || hit.applyUrl,
+          department: hit.categories?.team || '',
+          seniority: /senior|staff|principal/i.test(hit.text || '') ? 'senior' : 'mid',
+          description: stripHtml(hit.descriptionPlain || hit.description || ''),
+          requirements: '',
+          posted_at: hit.createdAt ? new Date(hit.createdAt).toISOString().slice(0, 10) : '',
+        }
+      }),
+      q,
+      12,
+    )
+  })
+}
+
+async function pullAmazon(q) {
+  const url = new URL('https://www.amazon.jobs/en/search.json')
+  url.searchParams.set('base_query', q || 'software engineer')
+  url.searchParams.set('offset', '0')
+  url.searchParams.set('result_limit', '30')
+  url.searchParams.set('sort', 'relevant')
+  const body = await fetchJson(url)
+  const rows = Array.isArray(body.jobs) ? body.jobs : []
+  return ingest(
+    rows.map((hit) => ({
+      title: hit.title,
+      company: hit.company_name || 'Amazon',
+      location: hit.normalized_location || hit.location || hit.city || 'United States',
+      remote: /remote/i.test(`${hit.title} ${hit.normalized_location || ''}`) ? 'remote' : 'hybrid',
+      source: 'amazon',
+      source_url: hit.job_path ? `https://www.amazon.jobs${hit.job_path}` : hit.url_next_step,
+      department: hit.job_family || hit.business_category || '',
+      seniority: /senior|principal|ii+|iii/i.test(hit.title || '') ? 'senior' : 'mid',
+      description: stripHtml(hit.description_short || hit.description || ''),
+      requirements: stripHtml(hit.basic_qualifications || ''),
+      posted_at: '',
+    })),
+    q,
+    20,
+  )
+}
+
+async function pullNvidia(q) {
+  const body = await fetchJsonPost(
+    'https://nvidia.wd5.myworkdayjobs.com/wday/cxs/nvidia/NVIDIAExternalCareerSite/jobs',
+    { appliedFacets: {}, limit: 30, offset: 0, searchText: q || 'software engineer' },
+  )
+  const rows = Array.isArray(body.jobPostings) ? body.jobPostings : []
+  return ingest(
+    rows.map((hit) => ({
+      title: hit.title,
+      company: 'NVIDIA',
+      location: hit.locationsText || 'United States',
+      remote: /remote/i.test(hit.locationsText || '') ? 'remote' : 'hybrid',
+      source: 'nvidia',
+      source_url: hit.externalPath
+        ? `https://nvidia.wd5.myworkdayjobs.com/en-US/NVIDIAExternalCareerSite${hit.externalPath}`
+        : '',
+      department: 'Engineering',
+      seniority: /senior|staff|principal/i.test(hit.title || '') ? 'senior' : 'mid',
+      description: 'NVIDIA career posting.',
+      requirements: '',
+      posted_at: '',
+    })),
+    q,
+    15,
+  )
+}
+
 export async function refreshLiveJobs(what) {
   const q = String(what || 'software engineer').slice(0, 80)
   const now = Date.now()
@@ -328,6 +556,10 @@ export async function refreshLiveJobs(what) {
     remoteok: 0,
     himalayas: 0,
     jobicy: 0,
+    greenhouse: 0,
+    lever: 0,
+    amazon: 0,
+    nvidia: 0,
   }
   const settled = await Promise.allSettled([
     adzunaEnabled()
@@ -358,6 +590,22 @@ export async function refreshLiveJobs(what) {
     }),
     pullJobicy(q).then((ids) => {
       sources.jobicy = ids.length
+      return ids
+    }),
+    pullGreenhouse(q).then((ids) => {
+      sources.greenhouse = ids.length
+      return ids
+    }),
+    pullLever(q).then((ids) => {
+      sources.lever = ids.length
+      return ids
+    }),
+    pullAmazon(q).then((ids) => {
+      sources.amazon = ids.length
+      return ids
+    }),
+    pullNvidia(q).then((ids) => {
+      sources.nvidia = ids.length
       return ids
     }),
   ])
