@@ -30,6 +30,7 @@ import { BRAND } from './brand'
 import { PortalBack } from './components/PortalBack'
 import { AdminPortal, PrivacyPortal } from './portals/AdminPortal'
 import { DashboardPortal } from './portals/DashboardPortal'
+import { CompanyPortal } from './portals/CompanyPortal'
 import { EmployersPortal } from './portals/EmployersPortal'
 import { AboutPortal, AuthPortal, HomePortal } from './portals/HomePortal'
 import { JobPortal, MatchesPortal, TailorPortal } from './portals/MatchesPortal'
@@ -51,6 +52,7 @@ export type Portal =
   | 'tracker'
   | 'admin'
   | 'privacy'
+  | 'company'
 
 const PORTALS = new Set<Portal>([
   'home',
@@ -67,6 +69,7 @@ const PORTALS = new Set<Portal>([
   'tracker',
   'admin',
   'privacy',
+  'company',
 ])
 
 const TOKEN_KEY = 'openpath_token'
@@ -339,7 +342,8 @@ export default function App() {
     portal !== 'login' &&
     portal !== 'signup' &&
     portal !== 'about' &&
-    portal !== 'employers'
+    portal !== 'employers' &&
+    portal !== 'company'
   const isMarketing = portal === 'home'
   const isAuth = portal === 'login' || portal === 'signup'
 
@@ -412,6 +416,7 @@ export default function App() {
           />
         ) : null}
         {portal === 'about' ? <AboutPortal onGo={(p) => go(p as Portal)} /> : null}
+        {portal === 'company' ? <CompanyPortal onGo={(p) => go(p as Portal)} /> : null}
         {portal === 'employers' ? <EmployersPortal onGo={(p) => go(p as Portal)} /> : null}
         {portal === 'login' || portal === 'signup' ? (
           <AuthPortal
@@ -532,6 +537,9 @@ export default function App() {
             <p className="footer-label">Companies</p>
             <button type="button" className="linkish" onClick={() => go('employers')}>
               Request a shortlist
+            </button>
+            <button type="button" className="linkish" onClick={() => go('company')}>
+              Company profile
             </button>
             <button type="button" className="linkish" onClick={() => go('admin')}>
               Office desk

@@ -1327,6 +1327,142 @@ textarea:focus {
   .hero-copy .lede {
     max-width: 100%;
   }
+
+  .sheet-split,
+  .sheet-practices ul {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sheet {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 2.4rem 2.2rem 2rem;
+}
+
+.sheet-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  padding-bottom: 1.6rem;
+  margin-bottom: 1.6rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.sheet-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.sheet-name {
+  margin: 0;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 650;
+  font-size: 1.05rem;
+}
+
+.sheet-unit {
+  margin: 0.15rem 0 0;
+  color: var(--gold-deep);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-size: 0.68rem;
+}
+
+.sheet-tagline {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-style: italic;
+  margin: 0.35rem 0 0.9rem;
+}
+
+.sheet-lede {
+  max-width: none;
+  margin-bottom: 2rem;
+}
+
+.sheet-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.sheet h2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.55rem;
+  margin: 0 0 0.45rem;
+}
+
+.sheet-split p {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.sheet-practices ul {
+  list-style: none;
+  padding: 0;
+  margin: 0.4rem 0 2rem;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.85rem 1.2rem;
+}
+
+.sheet-practices strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 400;
+}
+
+.sheet-practices span {
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+}
+
+.sheet-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-top: 2rem;
+  padding-top: 1.4rem;
+  border-top: 1px solid var(--line);
+}
+
+.sheet-foot p {
+  margin: 0.3rem 0 0;
+}
+
+@media print {
+  .ticker,
+  .nav,
+  .footer,
+  .sheet-print {
+    display: none !important;
+  }
+
+  .site {
+    background: #fff;
+  }
+
+  .main-app {
+    width: 100%;
+    max-width: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .sheet {
+    border: 0;
+    padding: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
