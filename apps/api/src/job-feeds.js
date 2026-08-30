@@ -1,5 +1,5 @@
 import { query, queryOne, nowIso } from './db.js'
-import { extractSkills } from './matching.js'
+import { extractSkills, isRoleTitle } from './matching.js'
 import { adzunaEnabled, refreshAdzuna } from './adzuna.js'
 
 const FETCH_MS = 12000
@@ -133,23 +133,34 @@ export function boardSearchLinks(q, location) {
 }
 
 export function searchQuery(parsed, user, fallback = 'software engineer') {
+  const headline = String(user?.headline || '')
+    .replace(/\s+with\b.*/i, '')
+    .trim()
+    .slice(0, 60)
+  if (headline && isRoleTitle(headline)) return headline
+
   const target = String(user?.target_roles || '')
     .split(',')[0]
     .replace(/\s+with\b.*/i, '')
     .trim()
-  const title = String(parsed?.titles?.[0] || '')
-    .replace(/\s+with\b.*/i, '')
-    .split(/[.|]/)[0]
-    .trim()
-    .slice(0, 60)
+  const targetLow = target.toLowerCase()
   if (target && target.length >= 4 && target.length <= 60) {
-    if (!/\b(engineer|developer|designer|manager|analyst|scientist)\b/i.test(target) && /\bengineer\b/i.test(title)) {
+    if (/\b(full[\s-]?stack|front[\s-]?end|back[\s-]?end)\b/.test(targetLow) && !/\b(engineer|developer)\b/.test(targetLow)) {
       return `${target} engineer`.slice(0, 60)
     }
-    return target
+    if (isRoleTitle(target)) return target
   }
-  if (title) return title
-  const skills = Array.isArray(parsed?.skills) ? parsed.skills.slice(0, 4).join(' ') : ''
+
+  const role = (parsed?.titles || []).find((t) => isRoleTitle(t))
+  if (role) {
+    return String(role)
+      .replace(/\s+with\b.*/i, '')
+      .split(/[.|]/)[0]
+      .trim()
+      .slice(0, 60)
+  }
+
+  const skills = Array.isArray(parsed?.skills) ? parsed.skills.slice(0, 5).join(' ') : ''
   return skills || fallback
 }
 

@@ -74,6 +74,17 @@ function parseJson(value, fallback) {
   }
 }
 
+function parsedFromResume(resume, user) {
+  const live = parseResume(resume?.raw_text || '')
+  const stored = parseJson(resume?.parsed_json, {})
+  return {
+    ...stored,
+    ...live,
+    location: user?.location || '',
+    years: user?.years_experience || live.years || stored.years || 0,
+  }
+}
+
 function resumeOut(row) {
   if (!row) return null
   return {
@@ -312,7 +323,7 @@ app.get('/v1/jobs/:id', requireUser, async (req, res) => {
     }
     const resume = await latestOriginalResume(req.user.id)
     const parsed = resume
-      ? { ...parseJson(resume.parsed_json, parseResume(resume.raw_text)), location: req.user.location }
+      ? parsedFromResume(resume, req.user)
       : { skills: [], titles: [], years: req.user.years_experience, keywords: [], location: req.user.location }
     const ranked = rankJobs(parsed, [job])[0]
     res.json(jobOut(ranked))
@@ -328,11 +339,7 @@ app.get('/v1/matches', requireUser, async (req, res) => {
       res.status(400).json({ detail: 'Upload a resume before matching jobs' })
       return
     }
-    const parsed = {
-      ...parseJson(resume.parsed_json, parseResume(resume.raw_text)),
-      location: req.user.location,
-      years: req.user.years_experience || parseJson(resume.parsed_json, {}).years,
-    }
+    const parsed = parsedFromResume(resume, req.user)
     const q = String(req.query.q || searchQuery(parsed, req.user))
     let feedMeta = {
       remotive: 0,
@@ -506,11 +513,7 @@ app.post(
         res.status(400).json({ detail: 'Upload a resume before applying' })
         return
       }
-      const parsed = {
-        ...parseJson(resume.parsed_json, parseResume(resume.raw_text)),
-        location: req.user.location,
-        years: req.user.years_experience || parseJson(resume.parsed_json, {}).years,
-      }
+      const parsed = parsedFromResume(resume, req.user)
       const limit = Math.min(8, Math.max(1, Number(req.body?.limit || 5)))
       const minScore = Number(req.body?.min_score || 55)
       const requested = Array.isArray(req.body?.job_ids) ? req.body.job_ids.map(Number).filter((n) => n > 0) : []
@@ -591,14 +594,14 @@ app.get('/v1/dashboard', requireUser, async (req, res) => {
     )
     let topMatches = []
     if (resume) {
-      const parsed = { ...parseJson(resume.parsed_json, {}), location: req.user.location }
+      const parsed = parsedFromResume(resume, req.user)
       const jobs = await query('SELECT * FROM jobs ORDER BY id DESC LIMIT 80')
       topMatches = rankJobs(parsed, jobs, { minScore: 40 }).slice(0, 4).map(jobOut)
     }
     res.json({
       user: publicUser(req.user),
       has_resume: Boolean(resume),
-      resume_skills: resume ? parseJson(resume.parsed_json, {}).skills || [] : [],
+      resume_skills: resume ? parsedFromResume(resume, req.user).skills || [] : [],
       pipeline: counts,
       applications: apps.length,
       activity,

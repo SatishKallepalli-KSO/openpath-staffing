@@ -175,7 +175,7 @@ export const SKILLS = [
 
 const SKILL_LOOKUP = SKILLS.map((s) => s.toLowerCase()).sort((a, b) => b.length - a.length)
 
-const TITLE_HINTS = [
+const ROLE_WORDS = [
   'engineer',
   'developer',
   'designer',
@@ -185,7 +185,6 @@ const TITLE_HINTS = [
   'specialist',
   'coordinator',
   'director',
-  'lead',
   'architect',
   'consultant',
   'administrator',
@@ -195,16 +194,37 @@ const TITLE_HINTS = [
   'marketer',
   'writer',
   'researcher',
-  'product',
-  'success',
-  'sales',
-  'operations',
-  'support',
-  'intern',
-  'associate',
+]
+
+const TITLE_HINTS = [
+  ...ROLE_WORDS,
+  'lead',
   'principal',
   'staff',
+  'intern',
+  'associate',
 ]
+
+const MONTH = /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b/i
+
+export function looksLikeProjectLine(line) {
+  const raw = String(line || '').trim()
+  const low = raw.toLowerCase()
+  if (!low) return true
+  if (/^(projects?|experience|education|skills|summary|work history|selected work)\b/.test(low)) return true
+  if (MONTH.test(low) && /\b(19|20)\d{2}\b/.test(low)) return true
+  if (/\b(19|20)\d{2}\b/.test(low) && /\b(present|current|now)\b/.test(low)) return true
+  if (/\b(platform|project|application)\b/.test(low) && !ROLE_WORDS.some((w) => low.includes(w))) return true
+  return false
+}
+
+export function isRoleTitle(line) {
+  const low = String(line || '').toLowerCase()
+  if (!low || looksLikeProjectLine(line)) return false
+  if (ROLE_WORDS.some((w) => low.includes(w))) return true
+  if (/\b(full[\s-]?stack|front[\s-]?end|back[\s-]?end|product manager|data scientist)\b/.test(low)) return true
+  return false
+}
 
 export function normalize(text) {
   return String(text || '')
@@ -239,12 +259,9 @@ export function extractTitles(text) {
     .filter(Boolean)
   const titles = []
   for (const line of lines.slice(0, 80)) {
-    const low = line.toLowerCase()
-    if (line.length > 8 && line.length < 80 && TITLE_HINTS.some((h) => low.includes(h))) {
-      if (!/^(skills|experience|education|summary|projects)\b/.test(low)) {
-        titles.push(line.replace(/^[-•*\d.)\s]+/, '').slice(0, 80))
-      }
-    }
+    if (line.length <= 8 || line.length >= 90) continue
+    if (!isRoleTitle(line)) continue
+    titles.push(line.replace(/^[-•*\d.)\s]+/, '').slice(0, 80))
   }
   return [...new Set(titles)].slice(0, 8)
 }

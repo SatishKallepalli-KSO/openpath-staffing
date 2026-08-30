@@ -80,4 +80,17 @@ describe('apply urls and board search', () => {
       'Full stack engineer',
     )
   })
+
+  it('searches the tech stack instead of a project name', () => {
+    const q = searchQuery(
+      {
+        titles: ['Halogen Media Operations Platform Feb 2024 – Present'],
+        skills: ['react', 'typescript', 'node.js', 'aws'],
+      },
+      { headline: '', target_roles: '' },
+    )
+    assert.equal(q.includes('Halogen'), false)
+    assert.ok(q.includes('react'))
+    assert.ok(q.includes('typescript'))
+  })
 })

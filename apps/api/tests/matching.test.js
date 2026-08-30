@@ -50,4 +50,21 @@ Skills: React, TypeScript, Node.js, Postgres, Docker, AWS
     assert.ok(skills.includes('power bi'))
     assert.ok(skills.includes('dbt'))
   })
+
+  it('does not treat a dated project name as a job title', () => {
+    const parsed = parseResume(`
+Satish Kallepalli
+Software Engineer
+Skills: React, TypeScript, Node.js, AWS
+Halogen Media Operations Platform Feb 2024 – Present
+- Built media workflows in React and Node.js
+`)
+    assert.ok(parsed.titles.some((t) => /engineer/i.test(t)))
+    assert.equal(
+      parsed.titles.some((t) => /halogen/i.test(t)),
+      false,
+    )
+    assert.ok(parsed.skills.includes('react'))
+    assert.ok(parsed.skills.includes('typescript'))
+  })
 })
