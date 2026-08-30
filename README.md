@@ -4,7 +4,7 @@ Technology Staffing & Consulting. Connecting Talent. Enabling Technology.
 
 Candidate-first staffing site: upload a resume, match roles, make small edits, apply, and track progress.
 
-**Repo:** https://github.com/SatishKallepalli-KSO/openpath-staffing
+**Repo:** https://github.com/SatishKallepalli-KSO/saventra-technologies
 
 ## What this is
 

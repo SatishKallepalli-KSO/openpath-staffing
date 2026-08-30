@@ -3,7 +3,7 @@
 - Local default: SQLite at `apps/api/data/openpath.db`
 - Production: Neon Free Postgres via `DATABASE_URL` (pooled, `sslmode=require`)
 
-Neon project: `openpath-staffing` (`still-star-62841437`), org `org-falling-bird-44330402`, region `aws-us-west-2`.
+Neon project: `openpath-staffing` (`still-star-62841437`), org `org-falling-bird-44330402`, region `aws-us-west-2`. GitHub and Render use the name `saventra-technologies`. The Neon project name was left as created.
 
 Create or copy the **pooled** connection string and set it on Render as `DATABASE_URL`. Do not commit the password.
 

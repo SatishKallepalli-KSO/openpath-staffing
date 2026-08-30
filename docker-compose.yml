@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: openpath-staffing:0.1.0
+    image: saventra-technologies:0.1.0
     ports:
       - "8000:8000"
     environment:
