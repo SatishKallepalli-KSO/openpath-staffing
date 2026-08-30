@@ -17,7 +17,7 @@ export function MatchesPortal({ jobs, count, live, error, busy, onFilter, onOpen
     <div className="portal">
       <header className="desk-mast">
         <div className="desk-mast-inner">
-          <p className="eyebrow gold">{live ? 'Catalog + live search' : 'OpenPath catalog'}</p>
+          <p className="eyebrow gold">{live ? 'Catalog + live search' : 'SAVENTRA catalog'}</p>
           <h1>Roles filtered to your resume</h1>
           <p className="muted">{busy ? 'Scoring jobs…' : `${count} roles above your match floor.`}</p>
         </div>

@@ -1,4 +1,6 @@
-# OpenPath Staffing
+# SAVENTRA Technologies
+
+Technology Staffing & Consulting. Connecting Talent. Enabling Technology.
 
 Candidate-first staffing site: upload a resume, match roles, make small edits, apply, and track progress.
 
@@ -6,7 +8,7 @@ Candidate-first staffing site: upload a resume, match roles, make small edits, a
 
 ## What this is
 
-The job market is noisy. OpenPath helps people spend energy on roles they can actually win.
+The job market is noisy. SAVENTRA helps people spend energy on roles they can actually win.
 
 1. Sign up and build a profile
 2. Upload a resume (PDF, Word, or paste)
@@ -15,7 +17,7 @@ The job market is noisy. OpenPath helps people spend energy on roles they can ac
 5. Apply (we open the employer link and keep your status)
 6. Track saved / applied / interviewing / offered / rejected
 
-We do **not** scrape LinkedIn, Indeed, or Greenhouse. v1 uses an OpenPath catalog (plus optional Adzuna live search if you add API keys). We do **not** auto-submit into someone else's ATS.
+We do **not** scrape LinkedIn, Indeed, or Greenhouse. v1 uses a SAVENTRA catalog (plus optional Adzuna live search if you add API keys). We do **not** auto-submit into someone else's ATS.
 
 ## Quick start
 
@@ -27,7 +29,7 @@ npm run dev:api
 npm run dev          # http://localhost:5175
 ```
 
-Demo login: `demo@openpath.jobs` / `DemoPass1234`
+Demo login: `demo@saventra.tech` / `DemoPass1234`
 
 Admin desk (`#/admin`): set `ADMIN_PIN` or local `ALLOW_INSECURE_DEFAULT_PIN=1`.
 

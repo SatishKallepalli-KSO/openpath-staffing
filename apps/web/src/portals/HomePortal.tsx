@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { fetchPublicJobs, type Job } from '../api'
+import { BRAND } from '../brand'
 import { BrandMark } from '../components/BrandMark'
 
 type Props = {
@@ -35,14 +36,14 @@ export function HomePortal({ jobs, applications, signedIn, onGo }: Props) {
         </div>
         <div className="wrap hero-grid">
           <div className="hero-copy">
-            <p className="eyebrow gold">OpenPath Staffing · Bay Area and remote US</p>
+            <p className="eyebrow gold">{BRAND.practice}</p>
             <h1>
-              Placement with
-              <em> the precision of a desk,</em> not the noise of a board.
+              Connecting Talent.
+              <em>Enabling Technology.</em>
             </h1>
             <p className="lede">
-              We read your resume, score live roles, tailor a few honest lines, and track every
-              conversation. Hiring teams send a brief. We return people whose work already fits.
+              SAVENTRA Technologies staffs engineers, data, product, and operators, and sits with
+              hiring teams as a consulting desk. Resume in. Roles ranked. A pipeline you own.
             </p>
             <div className="hero-actions">
               <button type="button" className="btn btn-gold" onClick={() => onGo(signedIn ? 'dashboard' : 'signup')}>
@@ -171,9 +172,9 @@ export function HomePortal({ jobs, applications, signedIn, onGo }: Props) {
 
       <section className="quote-bleed">
         <div className="wrap quote-inner">
-          <p className="eyebrow gold">The standard</p>
+          <p className="eyebrow gold">SAVENTRA Technologies</p>
           <blockquote>
-            Fewer roles. Better fit. No fiction on the resume. A pipeline you actually own.
+            Connecting Talent. Enabling Technology.
           </blockquote>
         </div>
       </section>
@@ -182,7 +183,7 @@ export function HomePortal({ jobs, applications, signedIn, onGo }: Props) {
         <img src="/media/city.jpg" alt="" />
         <div className="wrap cta-row">
           <div>
-            <h2>The next search starts on this desk.</h2>
+            <h2>The next search starts with SAVENTRA.</h2>
             <p>Candidates create a profile in minutes. Hiring teams send a brief the same day.</p>
           </div>
           <div className="hero-actions">
@@ -207,7 +208,7 @@ export function AboutPortal({ onGo }: AboutProps) {
       <div className="page-hero">
         <img src="/media/city.jpg" alt="" />
         <div>
-          <p className="eyebrow gold">The firm</p>
+          <p className="eyebrow gold">{BRAND.practice}</p>
           <h1>Built for people tired of the black hole.</h1>
         </div>
       </div>
@@ -215,7 +216,7 @@ export function AboutPortal({ onGo }: AboutProps) {
         <img src="/media/talent.jpg" alt="A candidate working through a search" />
         <div>
           <p className="lede">
-            Hiring got slower and more automated. OpenPath exists so candidates spend energy on roles
+            Hiring got slower and more automated. SAVENTRA exists so candidates spend energy on roles
             they can win, and so companies see a shortlist instead of noise.
           </p>
           <ol className="steps-rich">
@@ -280,11 +281,11 @@ export function AuthPortal({ mode, error, busy, onSubmit, onSwitch }: AuthProps)
     <div className="auth-split">
       <div className="auth-visual">
         <img src="/media/board.jpg" alt="" />
-        <p>A quieter way to run a search.</p>
+        <p>{BRAND.tagline}</p>
       </div>
       <div className="auth-card">
         <BrandMark className="mark-lg" />
-        <p className="eyebrow">OpenPath Staffing</p>
+        <p className="eyebrow">{BRAND.practice}</p>
         <h1>{signup ? 'Create your profile' : 'Welcome back'}</h1>
         <p className="muted">
           {signup
@@ -319,7 +320,7 @@ export function AuthPortal({ mode, error, busy, onSubmit, onSwitch }: AuthProps)
         </p>
         {!signup ? (
           <p className="demo-note">
-            Preview the desk: <code>demo@openpath.jobs</code> / <code>DemoPass1234</code>
+            Preview the desk: <code>{BRAND.demoEmail}</code> / <code>{BRAND.demoPassword}</code>
           </p>
         ) : null}
       </div>

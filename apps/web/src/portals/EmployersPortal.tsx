@@ -44,7 +44,7 @@ export function EmployersPortal({ onGo }: Props) {
         <img src="/media/gtm.jpg" alt="A modern hiring floor" />
         <div>
           <p className="lede">
-            OpenPath works retained-style search on a modern desk. You stay on the offer. We stay
+            SAVENTRA works retained-style search on a modern desk. You stay on the offer. We stay
             on the matching. No scrape-and-spam. No invented candidates.
           </p>
           <ol className="steps-rich">
@@ -79,7 +79,7 @@ export function EmployersPortal({ onGo }: Props) {
               <h2>Brief received</h2>
               <p>The desk will review it and follow up at the email you gave.</p>
               <button type="button" className="btn btn-primary" onClick={() => onGo('home')}>
-                Back to OpenPath
+                Back to SAVENTRA
               </button>
             </div>
           ) : (

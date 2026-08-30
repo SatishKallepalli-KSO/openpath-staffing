@@ -239,14 +239,20 @@ async function seedJobs() {
 }
 
 async function seedDemoUser() {
-  const existing = await queryOne('SELECT id FROM users WHERE email = $1', ['demo@openpath.jobs'])
+  const nextEmail = 'demo@saventra.tech'
+  const prior = await queryOne('SELECT id FROM users WHERE email = $1', ['demo@openpath.jobs'])
+  const existing = await queryOne('SELECT id FROM users WHERE email = $1', [nextEmail])
+  if (prior && !existing) {
+    await query('UPDATE users SET email = $1 WHERE id = $2', [nextEmail, prior.id])
+    return
+  }
   if (existing) return
   const hash = await bcrypt.hash('DemoPass1234', 10)
   const user = await queryOne(
     `INSERT INTO users (email, password_hash, full_name, headline, location, target_roles, years_experience, created_at)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
     [
-      'demo@openpath.jobs',
+      nextEmail,
       hash,
       'Jordan Hale',
       'Full stack engineer',
@@ -288,6 +294,11 @@ async function seedDemoUser() {
   }
 }
 
+async function renameLegacyBrand() {
+  await query(`UPDATE jobs SET company = 'SAVENTRA Technologies' WHERE company = 'OpenPath Staffing'`)
+  await query(`UPDATE jobs SET description = REPLACE(description, 'OpenPath', 'SAVENTRA') WHERE description LIKE '%OpenPath%'`)
+}
+
 export async function initDb() {
   if (isPostgres) {
     pool = new pg.Pool({
@@ -325,6 +336,7 @@ export async function initDb() {
     `)
   }
   await seedJobs()
+  await renameLegacyBrand()
   await seedDemoUser()
 }
 

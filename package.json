@@ -2,7 +2,7 @@
   "name": "openpath-staffing",
   "private": true,
   "version": "0.1.0",
-  "description": "OpenPath Staffing — resume match, tailor, apply, and track",
+  "description": "SAVENTRA Technologies: technology staffing and consulting. Resume match, tailor, apply, and track",
   "workspaces": [
     "apps/web",
     "apps/api"

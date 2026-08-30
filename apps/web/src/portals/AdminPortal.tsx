@@ -16,7 +16,7 @@ export function AdminPortal({ authed, jobs, error, busy, pin, onPin, onLogin, on
   return (
     <div className="portal">
       <h1>Office desk</h1>
-      <p className="muted">Post OpenPath-owned roles. Candidates will see them in match results.</p>
+      <p className="muted">Post SAVENTRA-owned roles. Candidates will see them in match results.</p>
       {!authed ? (
         <form
           className="stack-form"
@@ -43,7 +43,7 @@ export function AdminPortal({ authed, jobs, error, busy, pin, onPin, onLogin, on
             </label>
             <label>
               Company
-              <input name="company" defaultValue="OpenPath Staffing" />
+              <input name="company" defaultValue="SAVENTRA Technologies" />
             </label>
             <label>
               Location
@@ -94,7 +94,7 @@ export function PrivacyPortal() {
       <p className="eyebrow">Legal</p>
       <h1>Privacy</h1>
       <p className="lede">
-        OpenPath stores your account, resume text, hiring briefs, and application statuses so we
+        SAVENTRA stores your account, resume text, hiring briefs, and application statuses so we
         can match roles and run searches. Resume files are parsed on the server and saved as text.
         We do not sell candidate data. To request deletion, write from the email on your profile.
       </p>

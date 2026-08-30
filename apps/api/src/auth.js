@@ -77,7 +77,7 @@ export async function createUser({ email, password, full_name }) {
      VALUES ($1,$2,$3,'','','',0,$4) RETURNING *`,
     [normalized, password_hash, name, nowIso()],
   )
-  await addActivity(row.id, 'account', 'Created profile', 'Welcome to OpenPath')
+  await addActivity(row.id, 'account', 'Created profile', 'Welcome to SAVENTRA')
   return row
 }
 

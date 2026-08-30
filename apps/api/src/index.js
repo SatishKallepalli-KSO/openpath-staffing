@@ -120,7 +120,7 @@ async function latestOriginalResume(userId) {
 app.get('/healthz', (_req, res) => {
   res.json({
     status: 'ok',
-    service: 'openpath-staffing-api',
+    service: 'saventra-api',
     db: isPostgres ? 'postgres' : 'sqlite',
     jobs_live: adzunaEnabled(),
     timestamp: new Date().toISOString(),
@@ -551,7 +551,7 @@ app.get('/v1/admin/inquiries', requireAdmin, async (_req, res) => {
 app.post('/v1/admin/jobs', requireAdmin, async (req, res) => {
   try {
     const title = String(req.body?.title || '').trim()
-    const company = String(req.body?.company || 'OpenPath Staffing').trim()
+    const company = String(req.body?.company || 'SAVENTRA Technologies').trim()
     const description = String(req.body?.description || '').trim()
     if (!title || !description) {
       res.status(400).json({ detail: 'Title and description are required' })
@@ -596,7 +596,7 @@ if (fs.existsSync(STATIC_DIR)) {
 await initDb()
 
 const server = app.listen(PORT, '0.0.0.0', () => {
-  console.log(`OpenPath API on :${PORT} (${isPostgres ? 'postgres' : 'sqlite'}) ${APP_URL}`)
+  console.log(`SAVENTRA API on :${PORT} (${isPostgres ? 'postgres' : 'sqlite'}) ${APP_URL}`)
 })
 
 async function shutdown() {

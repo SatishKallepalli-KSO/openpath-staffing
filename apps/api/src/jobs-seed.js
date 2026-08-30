@@ -209,7 +209,7 @@ export const SEED_JOBS = [
   },
   {
     title: 'Recruiter, Technical',
-    company: 'OpenPath Staffing',
+    company: 'SAVENTRA Technologies',
     location: 'Remote, US',
     remote: 'remote',
     source: 'company',
@@ -219,7 +219,7 @@ export const SEED_JOBS = [
     skills_csv: 'recruiting, sourcing, interviewing, communication, greenhouse, stakeholder management',
     posted_at: '2026-08-24',
     description:
-      'Join OpenPath. Source and close engineers and analysts for partner companies. Candidate-first, no ghosting.',
+      'Join SAVENTRA. Source and close engineers and analysts for partner companies. Candidate-first, no ghosting.',
     requirements:
       'Technical recruiting or sourcing, structured interviewing, and clear updates to candidates and hiring managers.',
   },
@@ -385,7 +385,7 @@ export const SEED_JOBS = [
   },
   {
     title: 'Business Operations Associate',
-    company: 'OpenPath Staffing',
+    company: 'SAVENTRA Technologies',
     location: 'Remote, US',
     remote: 'remote',
     source: 'company',
@@ -395,7 +395,7 @@ export const SEED_JOBS = [
     skills_csv: 'excel, operations, communication, documentation, project management, salesforce',
     posted_at: '2026-08-25',
     description:
-      'Help OpenPath keep candidate pipelines tidy. Spreadsheets, follow-ups, and process that respects people.',
+      'Help SAVENTRA keep candidate pipelines tidy. Spreadsheets, follow-ups, and process that respects people.',
     requirements:
       'Excel, written communication, documentation, and comfort with a CRM. Early career welcome.',
   },
@@ -481,7 +481,7 @@ export const SEED_JOBS = [
   },
   {
     title: 'Executive Assistant',
-    company: 'OpenPath Staffing',
+    company: 'SAVENTRA Technologies',
     location: 'San Jose, CA',
     remote: 'hybrid',
     source: 'company',

@@ -26,6 +26,7 @@ import {
   type User,
 } from './api'
 import { BrandMark } from './components/BrandMark'
+import { BRAND } from './brand'
 import { PortalBack } from './components/PortalBack'
 import { AdminPortal, PrivacyPortal } from './portals/AdminPortal'
 import { DashboardPortal } from './portals/DashboardPortal'
@@ -346,12 +347,12 @@ export default function App() {
     <div className={isMarketing ? 'site site-home' : 'site'}>
       <div className="ticker" aria-hidden>
         <div className="ticker-track">
-          {['Engineering', 'Data and AI', 'Product', 'Go to market', 'Finance', 'Operations', 'Bay Area · Remote US'].map(
+          {['SAVENTRA', 'Technology Staffing', 'Consulting', 'Engineering', 'Data and AI', 'Product', 'Go to market', 'Finance', 'Operations'].map(
             (label) => (
               <span key={`a-${label}`}>{label}</span>
             ),
           )}
-          {['Engineering', 'Data and AI', 'Product', 'Go to market', 'Finance', 'Operations', 'Bay Area · Remote US'].map(
+          {['SAVENTRA', 'Technology Staffing', 'Consulting', 'Engineering', 'Data and AI', 'Product', 'Go to market', 'Finance', 'Operations'].map(
             (label) => (
               <span key={`b-${label}`}>{label}</span>
             ),
@@ -362,8 +363,8 @@ export default function App() {
         <button type="button" className="brand" onClick={() => go('home')}>
           <BrandMark className="mark" />
           <span>
-            OpenPath
-            <small>Staffing</small>
+            {BRAND.short}
+            <small>{BRAND.unit}</small>
           </span>
         </button>
         <nav className="nav-links">
@@ -514,8 +515,9 @@ export default function App() {
         <div className="wrap footer-grid">
           <div>
             <BrandMark className="mark" />
-            <p className="footer-brand">OpenPath Staffing</p>
-            <p className="muted">Candidate-first search for a hard market.</p>
+            <p className="footer-brand">{BRAND.name}</p>
+            <p className="muted">{BRAND.practice}</p>
+            <p className="muted">{BRAND.tagline}</p>
           </div>
           <div>
             <p className="footer-label">Talent</p>
@@ -542,7 +544,9 @@ export default function App() {
             </button>
           </div>
         </div>
-        <p className="footer-fine wrap">© {new Date().getFullYear()} OpenPath Staffing. All searches stay truthful.</p>
+        <p className="footer-fine wrap">
+          © {new Date().getFullYear()} {BRAND.name}. {BRAND.tagline}
+        </p>
       </footer>
     </div>
   )

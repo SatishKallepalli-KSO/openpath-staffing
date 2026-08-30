@@ -1,6 +1,6 @@
 # Architecture
 
-OpenPath Staffing is a candidate-first staffing app. People sign up, upload a resume, see scored jobs, tailor a few lines, apply, and track the pipeline.
+SAVENTRA Technologies is a candidate-first staffing app. People sign up, upload a resume, see scored jobs, tailor a few lines, apply, and track the pipeline.
 
 ## System overview
 
@@ -61,7 +61,7 @@ Tailoring (`tailor.js`) only rephrases existing bullets and a skills line. It do
 
 ## Job sources
 
-1. Seeded catalog (Greenhouse / Lever / company-style postings, plus OpenPath-owned roles)
+1. Seeded catalog (Greenhouse / Lever / company-style postings, plus SAVENTRA-owned roles)
 2. Admin desk can publish more roles
 3. Optional Adzuna API (`ADZUNA_APP_ID`, `ADZUNA_APP_KEY`)
 
