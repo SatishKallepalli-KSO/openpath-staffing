@@ -28,7 +28,7 @@ import { extractFromUpload, parsedOrThrow } from './resume.js'
 import { parseResume, rankJobs } from './matching.js'
 import { suggestEdits } from './tailor.js'
 import { adzunaEnabled } from './adzuna.js'
-import { applyBrand, applyHost, boardSearchLinks, isLiveApplyUrl, liveFeedsEnabled, refreshLiveJobs, searchQuery } from './job-feeds.js'
+import { applyBrand, applyHost, boardSearchLinks, isLiveApplyUrl, isTrustedUsListing, liveFeedsEnabled, refreshLiveJobs, searchQuery } from './job-feeds.js'
 import { rateLimit } from './rate-limit.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -342,13 +342,7 @@ app.get('/v1/matches', requireUser, async (req, res) => {
     const parsed = parsedFromResume(resume, req.user)
     const q = String(req.query.q || searchQuery(parsed, req.user))
     let feedMeta = {
-      remotive: 0,
-      arbeitnow: 0,
-      themuse: 0,
       adzuna: 0,
-      remoteok: 0,
-      himalayas: 0,
-      jobicy: 0,
       greenhouse: 0,
       lever: 0,
       amazon: 0,
@@ -364,7 +358,9 @@ app.get('/v1/matches', requireUser, async (req, res) => {
     const minScore = Number(req.query.min_score || 35)
     const remote = String(req.query.remote || '')
     const department = String(req.query.department || '')
-    let ranked = rankJobs(parsed, jobs, { minScore: Number.isFinite(minScore) ? minScore : 35 })
+    let ranked = rankJobs(parsed, jobs, { minScore: Number.isFinite(minScore) ? minScore : 35 }).filter(
+      (j) => isTrustedUsListing(j),
+    )
     ranked.sort((a, b) => {
       const liveDiff = Number(isLiveApplyUrl(b.source_url)) - Number(isLiveApplyUrl(a.source_url))
       if (liveDiff) return liveDiff
@@ -526,7 +522,9 @@ app.post(
         }
       } else {
         const all = await query('SELECT * FROM jobs ORDER BY id DESC LIMIT 500')
-        const ranked = rankJobs(parsed, all, { minScore: Number.isFinite(minScore) ? minScore : 55 })
+        const ranked = rankJobs(parsed, all, { minScore: Number.isFinite(minScore) ? minScore : 55 }).filter(
+          (j) => isTrustedUsListing(j),
+        )
         const live = ranked.filter((j) => isLiveApplyUrl(j.source_url))
         jobs = (live.length ? live : ranked).slice(0, limit)
       }

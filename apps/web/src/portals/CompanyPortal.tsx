@@ -74,7 +74,7 @@ export function CompanyPortal({ onGo }: Props) {
             <span>02</span>
             <div>
               <strong>Score the desk</strong>
-              <p>Owned catalog plus public job APIs (Remotive, Arbeitnow, The Muse). No scraped career sites.</p>
+              <p>Owned catalog plus US recruiter boards (Greenhouse, Lever, Amazon, LinkedIn, Indeed). No scraped career sites.</p>
             </div>
           </li>
           <li>

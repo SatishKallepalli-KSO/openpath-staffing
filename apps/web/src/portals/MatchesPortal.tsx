@@ -4,12 +4,6 @@ import { matchTone } from '../lib/format'
 
 function sourceLine(sources: MatchSources | undefined, live: boolean) {
   const labels: [keyof MatchSources, string][] = [
-    ['remotive', 'Remotive'],
-    ['arbeitnow', 'Arbeitnow'],
-    ['themuse', 'The Muse'],
-    ['remoteok', 'Remote OK'],
-    ['himalayas', 'Himalayas'],
-    ['jobicy', 'Jobicy'],
     ['greenhouse', 'Greenhouse'],
     ['lever', 'Lever'],
     ['amazon', 'Amazon'],
@@ -70,9 +64,9 @@ export function MatchesPortal({
         <div className="board-links">
           <h2>Search the big boards and career sites</h2>
           <p className="muted">
-            LinkedIn and Indeed do not let us list their jobs here. These tiles open their search, plus Google,
-            Meta, Oracle, Microsoft, Amazon, and Apple careers, with your title filled in. Greenhouse, Lever,
-            Amazon, and NVIDIA roles that match also appear in the scored list below.
+            LinkedIn, Indeed, and ZipRecruiter are where US recruiters post most. Those tiles open their
+            search. Scored roles below come from Greenhouse, Lever, Amazon.jobs, and NVIDIA careers in the
+            United States. We dropped Remotive and other remote aggregators.
           </p>
           <div className="board-card-grid">
             {boardLinks.map((link) => (

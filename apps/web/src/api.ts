@@ -180,17 +180,11 @@ export async function uploadResume(token: string, file?: File, text?: string) {
 }
 
 export type MatchSources = {
-  remotive?: number
-  arbeitnow?: number
-  themuse?: number
-  adzuna?: number
-  remoteok?: number
-  himalayas?: number
-  jobicy?: number
   greenhouse?: number
   lever?: number
   amazon?: number
   nvidia?: number
+  adzuna?: number
 }
 
 export type BoardLink = {

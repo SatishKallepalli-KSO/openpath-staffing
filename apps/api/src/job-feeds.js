@@ -33,6 +33,26 @@ export function jobMatchesQuery(job, q) {
   return hits >= 1
 }
 
+export function isUsaJob(job) {
+  const loc = String(job.location || '')
+  const nonUs =
+    /\b(germany|berlin|munich|india|bangalore|hyderabad|london|united kingdom|\buk\b|england|france|paris|netherlands|amsterdam|israel|tel aviv|australia|sydney|italy|milan|sweden|stockholm|poland|singapore|brazil|ireland|dublin|japan|tokyo|canada|toronto|mexico|spain|barcelona)\b/i
+  const us =
+    /\b(united states|usa|u\.s\.a?|\bus\b|remote,? us|nationwide|california|new york|texas|washington|seattle|austin|boston|chicago|denver|atlanta|miami|colorado|georgia|florida|illinois|massachusetts|san francisco|san jose|los angeles|nyc|bay area)\b/i
+  if (nonUs.test(loc) && !us.test(loc)) return false
+  return true
+}
+
+export const AGGREGATOR_SOURCES = new Set(['remotive', 'arbeitnow', 'themuse', 'remoteok', 'himalayas', 'jobicy'])
+
+export function isTrustedUsListing(job) {
+  if (AGGREGATOR_SOURCES.has(String(job.source || '').toLowerCase())) return false
+  if (/remotive\.com|arbeitnow\.com|themuse\.com|remoteok\.com|himalayas\.app|jobicy\.com/i.test(String(job.source_url || ''))) {
+    return false
+  }
+  return isUsaJob(job)
+}
+
 export function isLiveApplyUrl(url) {
   const raw = String(url || '')
   if (!/^https?:\/\//i.test(raw)) return false
@@ -84,8 +104,14 @@ export function boardSearchLinks(q, location) {
     {
       name: 'Indeed',
       kind: 'indeed',
-      blurb: 'Same search on Indeed',
+      blurb: 'The board most US recruiters still post on',
       url: `https://www.indeed.com/jobs?q=${enc(keywords)}&l=${enc(loc)}`,
+    },
+    {
+      name: 'ZipRecruiter',
+      kind: 'ziprecruiter',
+      blurb: 'US recruiter board',
+      url: `https://www.ziprecruiter.com/jobs-search?search=${enc(keywords)}&location=${enc(loc)}`,
     },
     {
       name: 'Greenhouse',
@@ -221,7 +247,7 @@ export async function upsertLiveJob(job) {
 
 async function ingest(jobs, q, max = PER_FEED) {
   const ids = []
-  const filtered = jobs.filter((j) => jobMatchesQuery(j, q)).slice(0, max)
+  const filtered = jobs.filter((j) => isTrustedUsListing(j) && jobMatchesQuery(j, q)).slice(0, max)
   for (const job of filtered) {
     try {
       const id = await upsertLiveJob(job)
@@ -231,173 +257,6 @@ async function ingest(jobs, q, max = PER_FEED) {
     }
   }
   return ids
-}
-
-async function pullRemotive(q) {
-  const url = new URL('https://remotive.com/api/remote-jobs')
-  url.searchParams.set('search', q || 'software')
-  const body = await fetchJson(url)
-  const jobs = Array.isArray(body.jobs) ? body.jobs : []
-  return ingest(
-    jobs.slice(0, 80).map((hit) => ({
-      title: hit.title,
-      company: hit.company_name,
-      location: hit.candidate_required_location || 'Remote',
-      remote: 'remote',
-      source: 'remotive',
-      source_url: hit.url,
-      department: hit.category || '',
-      seniority: /senior|staff|principal/i.test(hit.title || '') ? 'senior' : 'mid',
-      description: hit.description,
-      requirements: Array.isArray(hit.tags) ? hit.tags.join(', ') : '',
-      skills_csv: Array.isArray(hit.tags) ? hit.tags.join(', ').toLowerCase() : '',
-      posted_at: String(hit.publication_date || '').slice(0, 10),
-    })),
-    q,
-  )
-}
-
-async function pullArbeitnow(q) {
-  const body = await fetchJson('https://www.arbeitnow.com/api/job-board-api')
-  const rows = Array.isArray(body.data) ? body.data : []
-  return ingest(
-    rows.slice(0, 120).map((hit) => ({
-      title: hit.title,
-      company: hit.company_name,
-      location: hit.location || (hit.remote ? 'Remote' : ''),
-      remote: hit.remote ? 'remote' : 'onsite',
-      source: 'arbeitnow',
-      source_url: hit.url,
-      department: Array.isArray(hit.tags) ? hit.tags[0] : '',
-      seniority: /senior|staff|lead/i.test(hit.title || '') ? 'senior' : 'mid',
-      description: hit.description,
-      requirements: Array.isArray(hit.tags) ? hit.tags.join(', ') : '',
-      skills_csv: Array.isArray(hit.tags) ? hit.tags.join(', ').toLowerCase() : '',
-      posted_at: hit.created_at ? String(hit.created_at).slice(0, 10) : '',
-    })),
-    q,
-  )
-}
-
-function museCategories(q) {
-  const s = String(q || '').toLowerCase()
-  const cats = []
-  if (/design|figma|ux|ui/.test(s)) cats.push('Design and UX')
-  if (/data|sql|analyst|machine learning|python/.test(s)) cats.push('Data Science')
-  if (/product/.test(s)) cats.push('Product')
-  if (/market/.test(s)) cats.push('Marketing and PR')
-  if (/sales|account/.test(s)) cats.push('Sales')
-  if (!cats.length || /engineer|developer|software|react|node/.test(s)) cats.unshift('Software Engineering')
-  return [...new Set(cats)].slice(0, 2)
-}
-
-async function pullMuse(q) {
-  const ids = []
-  for (const category of museCategories(q)) {
-    const url = new URL('https://www.themuse.com/api/public/jobs')
-    url.searchParams.set('page', '0')
-    url.searchParams.set('descending', 'true')
-    url.searchParams.set('category', category)
-    const body = await fetchJson(url)
-    const rows = Array.isArray(body.results) ? body.results : []
-    const mapped = rows.map((hit) => {
-      const loc = Array.isArray(hit.locations) && hit.locations[0] ? hit.locations[0].name : 'United States'
-      return {
-        title: hit.name,
-        company: hit.company?.name || 'Company',
-        location: loc,
-        remote: /remote/i.test(loc) ? 'remote' : 'hybrid',
-        source: 'themuse',
-        source_url: hit.refs?.landing_page || '',
-        department: category,
-        seniority: /senior|staff|director/i.test(hit.name || '') ? 'senior' : 'mid',
-        description: Array.isArray(hit.contents) ? hit.contents : String(hit.contents || ''),
-        requirements: '',
-        posted_at: String(hit.publication_date || '').slice(0, 10),
-      }
-    })
-    ids.push(...(await ingest(mapped, q)))
-  }
-  return ids
-}
-
-async function pullRemoteOK(q) {
-  const rows = await fetchJson('https://remoteok.com/api')
-  const jobs = Array.isArray(rows) ? rows : []
-  return ingest(
-    jobs
-      .filter((hit) => hit && hit.position && (hit.apply_url || hit.url))
-      .slice(0, 80)
-      .map((hit) => ({
-        title: hit.position,
-        company: hit.company,
-        location: hit.location || 'Remote',
-        remote: 'remote',
-        source: 'remoteok',
-        source_url: hit.apply_url || hit.url,
-        department: Array.isArray(hit.tags) ? String(hit.tags[0] || '') : '',
-        seniority: /senior|staff|principal/i.test(hit.position || '') ? 'senior' : 'mid',
-        description: hit.description,
-        requirements: Array.isArray(hit.tags) ? hit.tags.join(', ') : '',
-        skills_csv: Array.isArray(hit.tags) ? hit.tags.join(', ').toLowerCase() : '',
-        posted_at: String(hit.date || '').slice(0, 10),
-      })),
-    q,
-  )
-}
-
-async function pullHimalayas(q) {
-  const url = new URL('https://himalayas.app/jobs/api')
-  url.searchParams.set('limit', '40')
-  const body = await fetchJson(url)
-  const rows = Array.isArray(body.jobs) ? body.jobs : []
-  return ingest(
-    rows.map((hit) => {
-      const loc = Array.isArray(hit.locationRestrictions) && hit.locationRestrictions.length
-        ? hit.locationRestrictions.join(', ')
-        : 'Remote'
-      const seniority = Array.isArray(hit.seniority) ? String(hit.seniority[0] || 'mid').toLowerCase() : 'mid'
-      return {
-        title: hit.title,
-        company: hit.companyName,
-        location: loc,
-        remote: 'remote',
-        source: 'himalayas',
-        source_url: hit.applicationLink || hit.guid,
-        department: Array.isArray(hit.categories) ? String(hit.categories[0] || '') : '',
-        seniority: /senior|staff|lead/.test(seniority) ? 'senior' : seniority.slice(0, 40),
-        description: hit.description || hit.excerpt,
-        requirements: '',
-        posted_at: String(hit.pubDate || '').slice(0, 10),
-      }
-    }),
-    q,
-  )
-}
-
-async function pullJobicy(q) {
-  const url = new URL('https://jobicy.com/api/v2/remote-jobs')
-  url.searchParams.set('count', '50')
-  const tag = tokensFromQuery(q)[0]
-  if (tag) url.searchParams.set('tag', tag)
-  const body = await fetchJson(url)
-  const rows = Array.isArray(body.jobs) ? body.jobs : []
-  return ingest(
-    rows.map((hit) => ({
-      title: hit.jobTitle,
-      company: hit.companyName,
-      location: hit.jobGeo || 'Remote',
-      remote: 'remote',
-      source: 'jobicy',
-      source_url: hit.url,
-      department: Array.isArray(hit.jobIndustry) ? String(hit.jobIndustry[0] || '') : '',
-      seniority: /senior|staff|lead/i.test(String(hit.jobLevel || hit.jobTitle || '')) ? 'senior' : 'mid',
-      description: hit.jobDescription || hit.jobExcerpt,
-      requirements: '',
-      posted_at: String(hit.pubDate || '').slice(0, 10),
-    })),
-    q,
-  )
 }
 
 const GREENHOUSE_BOARDS = [
@@ -505,6 +364,7 @@ async function pullAmazon(q) {
   url.searchParams.set('offset', '0')
   url.searchParams.set('result_limit', '30')
   url.searchParams.set('sort', 'relevant')
+  url.searchParams.set('loc_query', 'United States')
   const body = await fetchJson(url)
   const rows = Array.isArray(body.jobs) ? body.jobs : []
   return ingest(
@@ -561,12 +421,6 @@ export async function refreshLiveJobs(what) {
   }
   const sources = {
     adzuna: 0,
-    remotive: 0,
-    arbeitnow: 0,
-    themuse: 0,
-    remoteok: 0,
-    himalayas: 0,
-    jobicy: 0,
     greenhouse: 0,
     lever: 0,
     amazon: 0,
@@ -579,30 +433,6 @@ export async function refreshLiveJobs(what) {
           return ids
         })
       : Promise.resolve([]),
-    pullRemotive(q).then((ids) => {
-      sources.remotive = ids.length
-      return ids
-    }),
-    pullArbeitnow(q).then((ids) => {
-      sources.arbeitnow = ids.length
-      return ids
-    }),
-    pullMuse(q).then((ids) => {
-      sources.themuse = ids.length
-      return ids
-    }),
-    pullRemoteOK(q).then((ids) => {
-      sources.remoteok = ids.length
-      return ids
-    }),
-    pullHimalayas(q).then((ids) => {
-      sources.himalayas = ids.length
-      return ids
-    }),
-    pullJobicy(q).then((ids) => {
-      sources.jobicy = ids.length
-      return ids
-    }),
     pullGreenhouse(q).then((ids) => {
       sources.greenhouse = ids.length
       return ids

@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { applyBrand, boardSearchLinks, isLiveApplyUrl, jobMatchesQuery, searchQuery } from '../src/job-feeds.js'
+import { applyBrand, boardSearchLinks, isLiveApplyUrl, isTrustedUsListing, jobMatchesQuery, searchQuery } from '../src/job-feeds.js'
 
 describe('live job query filter', () => {
   it('keeps a software role for an engineer query', () => {
@@ -50,6 +50,7 @@ describe('apply urls and board search', () => {
     const names = links.map((l) => l.name)
     assert.ok(names.includes('LinkedIn'))
     assert.ok(names.includes('Indeed'))
+    assert.ok(names.includes('ZipRecruiter'))
     assert.ok(names.includes('Greenhouse'))
     assert.ok(names.includes('Google'))
     assert.ok(names.includes('Meta'))
@@ -92,5 +93,32 @@ describe('apply urls and board search', () => {
     assert.equal(q.includes('Halogen'), false)
     assert.ok(q.includes('react'))
     assert.ok(q.includes('typescript'))
+  })
+
+  it('keeps US Greenhouse roles and drops Remotive or overseas listings', () => {
+    assert.equal(
+      isTrustedUsListing({
+        source: 'greenhouse',
+        source_url: 'https://job-boards.greenhouse.io/figma/jobs/1',
+        location: 'San Francisco, CA',
+      }),
+      true,
+    )
+    assert.equal(
+      isTrustedUsListing({
+        source: 'remotive',
+        source_url: 'https://remotive.com/remote-jobs/role',
+        location: 'Remote',
+      }),
+      false,
+    )
+    assert.equal(
+      isTrustedUsListing({
+        source: 'greenhouse',
+        source_url: 'https://job-boards.greenhouse.io/gitlab/jobs/1',
+        location: 'Italy',
+      }),
+      false,
+    )
   })
 })
