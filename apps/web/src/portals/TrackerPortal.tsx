@@ -13,8 +13,13 @@ type Props = {
 export function TrackerPortal({ rows, error, onStatus, onOpen }: Props) {
   return (
     <div className="portal">
-      <h1>Application tracker</h1>
-      <p className="muted">Move each role as you hear back. This is your record, not the employer&apos;s.</p>
+      <header className="desk-mast">
+        <div className="desk-mast-inner">
+          <p className="eyebrow gold">Pipeline</p>
+          <h1>Application tracker</h1>
+          <p className="muted">Move each role as you hear back. This is your record, not the employer&apos;s.</p>
+        </div>
+      </header>
       {error ? <p className="form-error">{error}</p> : null}
       {rows.length === 0 ? (
         <p className="muted">No applications yet. Match a role and mark it applied.</p>

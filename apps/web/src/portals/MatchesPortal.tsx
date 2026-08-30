@@ -15,9 +15,9 @@ type MatchesProps = {
 export function MatchesPortal({ jobs, count, live, error, busy, onFilter, onOpen }: MatchesProps) {
   return (
     <div className="portal">
-      <header className="page-head">
-        <div>
-          <p className="eyebrow">{live ? 'Catalog + live search' : 'OpenPath catalog'}</p>
+      <header className="desk-mast">
+        <div className="desk-mast-inner">
+          <p className="eyebrow gold">{live ? 'Catalog + live search' : 'OpenPath catalog'}</p>
           <h1>Roles filtered to your resume</h1>
           <p className="muted">{busy ? 'Scoring jobs…' : `${count} roles above your match floor.`}</p>
         </div>
@@ -86,29 +86,33 @@ export function JobPortal({ job, error, busy, onTailor, onSave, onApply }: JobPr
   if (!job) return <p className="muted">Loading role…</p>
   return (
     <div className="portal job-detail">
-      <p className="eyebrow">
-        {job.company} · {job.source}
-      </p>
-      <h1>{job.title}</h1>
-      <p className="muted">
-        {job.location} · {job.remote} · {job.seniority}
-      </p>
-      {job.match_score != null ? (
-        <p className={`score score-${matchTone(job.match_score)} inline`}>
-          {job.match_score}% match to your resume
-        </p>
-      ) : null}
-      <div className="hero-actions">
-        <button type="button" className="btn btn-primary" onClick={onTailor} disabled={busy}>
-          Suggest small edits
-        </button>
-        <button type="button" className="btn btn-ghost" onClick={onSave} disabled={busy}>
-          Save role
-        </button>
-        <button type="button" className="btn btn-warm" onClick={onApply} disabled={busy}>
-          Apply and track
-        </button>
-      </div>
+      <header className="desk-mast">
+        <div className="desk-mast-inner">
+          <p className="eyebrow gold">
+            {job.company} · {job.source}
+          </p>
+          <h1>{job.title}</h1>
+          <p className="muted">
+            {job.location} · {job.remote} · {job.seniority}
+          </p>
+          {job.match_score != null ? (
+            <p className={`score score-${matchTone(job.match_score)} inline`}>
+              {job.match_score}% match to your resume
+            </p>
+          ) : null}
+          <div className="hero-actions">
+            <button type="button" className="btn btn-gold" onClick={onTailor} disabled={busy}>
+              Suggest small edits
+            </button>
+            <button type="button" className="btn btn-ghost-light" onClick={onSave} disabled={busy}>
+              Save role
+            </button>
+            <button type="button" className="btn btn-ghost-light" onClick={onApply} disabled={busy}>
+              Apply and track
+            </button>
+          </div>
+        </div>
+      </header>
       {job.matched_skills?.length ? (
         <p>
           You already show: {job.matched_skills.join(', ')}

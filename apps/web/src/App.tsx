@@ -333,26 +333,30 @@ export default function App() {
     }
   }
 
-  const showBack = portal !== 'home' && portal !== 'login' && portal !== 'signup'
+  const showBack =
+    portal !== 'home' &&
+    portal !== 'login' &&
+    portal !== 'signup' &&
+    portal !== 'about' &&
+    portal !== 'employers'
   const isMarketing = portal === 'home'
   const isAuth = portal === 'login' || portal === 'signup'
 
   return (
     <div className={isMarketing ? 'site site-home' : 'site'}>
       <div className="ticker" aria-hidden>
-        <span>Engineering</span>
-        <span>Data and AI</span>
-        <span>Product</span>
-        <span>Go to market</span>
-        <span>Finance</span>
-        <span>Operations</span>
-        <span>Bay Area · Remote US</span>
-        <span>Engineering</span>
-        <span>Data and AI</span>
-        <span>Product</span>
-        <span>Go to market</span>
-        <span>Finance</span>
-        <span>Operations</span>
+        <div className="ticker-track">
+          {['Engineering', 'Data and AI', 'Product', 'Go to market', 'Finance', 'Operations', 'Bay Area · Remote US'].map(
+            (label) => (
+              <span key={`a-${label}`}>{label}</span>
+            ),
+          )}
+          {['Engineering', 'Data and AI', 'Product', 'Go to market', 'Finance', 'Operations', 'Bay Area · Remote US'].map(
+            (label) => (
+              <span key={`b-${label}`}>{label}</span>
+            ),
+          )}
+        </div>
       </div>
       <header className="nav">
         <button type="button" className="brand" onClick={() => go('home')}>
@@ -401,7 +405,6 @@ export default function App() {
         {portal === 'home' ? (
           <HomePortal
             jobs={stats.jobs}
-            candidates={stats.candidates}
             applications={stats.applications}
             signedIn={signedIn}
             onGo={(p) => go(p as Portal)}

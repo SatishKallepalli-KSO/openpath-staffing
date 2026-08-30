@@ -4,22 +4,21 @@ import { BrandMark } from '../components/BrandMark'
 
 type Props = {
   jobs: number
-  candidates: number
   applications: number
   signedIn: boolean
   onGo: (portal: string) => void
 }
 
 const PRACTICES = [
-  { name: 'Engineering', detail: 'Full stack, platform, mobile, and quality.', img: '/media/hero.jpg' },
-  { name: 'Data and AI', detail: 'Analytics, warehousing, machine learning.', img: '/media/city.jpg' },
-  { name: 'Product and design', detail: 'Product managers, researchers, designers.', img: '/media/talent.jpg' },
-  { name: 'Go to market', detail: 'Sales, success, and marketing operators.', img: '/media/board.jpg' },
-  { name: 'Finance and people', detail: 'FP&A, accounting, recruiting, HRIS.', img: '/media/city.jpg' },
-  { name: 'Operations', detail: 'Supply chain, warehouse, and program leads.', img: '/media/hero.jpg' },
+  { name: 'Engineering', detail: 'Full stack, platform, mobile, and quality.', img: '/media/team.jpg' },
+  { name: 'Data and AI', detail: 'Analytics, warehousing, machine learning.', img: '/media/data.jpg' },
+  { name: 'Product and design', detail: 'Product managers, researchers, designers.', img: '/media/design.jpg' },
+  { name: 'Go to market', detail: 'Sales, success, and marketing operators.', img: '/media/gtm.jpg' },
+  { name: 'Finance and people', detail: 'FP&A, accounting, recruiting, HRIS.', img: '/media/finance.jpg' },
+  { name: 'Operations', detail: 'Supply chain, warehouse, and program leads.', img: '/media/ops.jpg' },
 ]
 
-export function HomePortal({ jobs, candidates, applications, signedIn, onGo }: Props) {
+export function HomePortal({ jobs, applications, signedIn, onGo }: Props) {
   const [featured, setFeatured] = useState<Job[]>([])
 
   useEffect(() => {
@@ -72,8 +71,8 @@ export function HomePortal({ jobs, candidates, applications, signedIn, onGo }: P
             <span>Open roles on the desk</span>
           </div>
           <div>
-            <strong>{candidates}</strong>
-            <span>Candidates in the book</span>
+            <strong>Private</strong>
+            <span>Candidate book, not a marketplace</span>
           </div>
           <div>
             <strong>{applications}</strong>
@@ -96,22 +95,27 @@ export function HomePortal({ jobs, candidates, applications, signedIn, onGo }: P
             See matches
           </button>
         </div>
-        <ul className="featured-grid">
-          {featured.map((job) => (
-            <li key={job.id}>
-              <button type="button" className="featured-card" onClick={() => onGo(signedIn ? 'matches' : 'signup')}>
-                <span className="featured-dept">{job.department || job.seniority}</span>
-                <h3>{job.title}</h3>
-                <p>
-                  {job.company}
-                  <span>
-                    {job.location} · {job.remote}
-                  </span>
-                </p>
-              </button>
-            </li>
-          ))}
-        </ul>
+        {featured.length === 0 ? (
+          <p className="muted">Loading the desk…</p>
+        ) : (
+          <ul className="featured-grid">
+            {featured.map((job, i) => (
+              <li key={job.id}>
+                <button type="button" className="featured-card" onClick={() => onGo(signedIn ? 'matches' : 'signup')}>
+                  <span className="featured-idx">{String(i + 1).padStart(2, '0')}</span>
+                  <span className="featured-dept">{job.department || job.seniority}</span>
+                  <h3>{job.title}</h3>
+                  <p>
+                    {job.company}
+                    <span>
+                      {job.location} · {job.remote}
+                    </span>
+                  </p>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section className="wrap section practice-section">
@@ -207,29 +211,49 @@ export function AboutPortal({ onGo }: AboutProps) {
           <h1>Built for people tired of the black hole.</h1>
         </div>
       </div>
-      <p className="lede">
-        Hiring got slower and more automated. OpenPath exists so candidates spend energy on roles
-        they can win, and so companies see a shortlist instead of noise.
-      </p>
-      <div className="split">
-        <section className="panel">
-          <h2>What we do</h2>
-          <ul className="plain">
-            <li>Match resumes to our catalog and, when configured, live job search.</li>
-            <li>Suggest small resume edits you can accept or skip.</li>
-            <li>Open the employer apply link and keep status on your dashboard.</li>
-            <li>Take hiring briefs and work a specialist practice.</li>
-          </ul>
-        </section>
-        <section className="panel">
-          <h2>What we will not pretend</h2>
-          <ul className="plain">
-            <li>We do not scrape LinkedIn, Indeed, or Greenhouse.</li>
-            <li>We do not auto-submit into someone else&apos;s ATS.</li>
-            <li>We do not invent jobs, dates, or employers on a resume.</li>
-          </ul>
-        </section>
+      <div className="manifest">
+        <img src="/media/talent.jpg" alt="A candidate working through a search" />
+        <div>
+          <p className="lede">
+            Hiring got slower and more automated. OpenPath exists so candidates spend energy on roles
+            they can win, and so companies see a shortlist instead of noise.
+          </p>
+          <ol className="steps-rich">
+            <li>
+              <span>01</span>
+              <div>
+                <strong>Read the resume</strong>
+                <p>We parse skills, titles, and years. Matching starts from what you actually did.</p>
+              </div>
+            </li>
+            <li>
+              <span>02</span>
+              <div>
+                <strong>Score the desk</strong>
+                <p>Roles in our catalog (and live search when configured) ranked to that document.</p>
+              </div>
+            </li>
+            <li>
+              <span>03</span>
+              <div>
+                <strong>Small honest edits</strong>
+                <p>Keyword-aware lines you can accept or skip. No invented employers or dates.</p>
+              </div>
+            </li>
+            <li>
+              <span>04</span>
+              <div>
+                <strong>Track the conversation</strong>
+                <p>We open the real apply link and keep status on a desk you own.</p>
+              </div>
+            </li>
+          </ol>
+        </div>
       </div>
+      <p className="muted fine-print">
+        We do not scrape LinkedIn, Indeed, or Greenhouse. We do not auto-submit into someone
+        else&apos;s ATS.
+      </p>
       <div className="hero-actions">
         <button type="button" className="btn btn-primary" onClick={() => onGo('signup')}>
           Join as talent

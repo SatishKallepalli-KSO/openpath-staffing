@@ -11,8 +11,13 @@ type ProfileProps = {
 export function ProfilePortal({ user, busy, error, onSubmit }: ProfileProps) {
   return (
     <div className="portal">
-      <h1>Your profile</h1>
-      <p className="muted">Hiring teams never see this until you apply. It only improves matching.</p>
+      <header className="desk-mast">
+        <div className="desk-mast-inner">
+          <p className="eyebrow gold">Candidate book</p>
+          <h1>Your profile</h1>
+          <p className="muted">Hiring teams never see this until you apply. It only improves matching.</p>
+        </div>
+      </header>
       <form className="stack-form" onSubmit={onSubmit}>
         <label>
           Full name
@@ -54,8 +59,13 @@ export function ResumePortal({ resumes, error, busy, onUpload }: ResumeProps) {
   const latest = resumes[0]
   return (
     <div className="portal">
-      <h1>Resume</h1>
-      <p className="muted">PDF, Word (.docx), or plain text. We store extracted text so matching works after Render restarts.</p>
+      <header className="desk-mast">
+        <div className="desk-mast-inner">
+          <p className="eyebrow gold">The document</p>
+          <h1>Resume</h1>
+          <p className="muted">PDF, Word, or plain text. We store extracted text so matching still works after a restart.</p>
+        </div>
+      </header>
       <form className="stack-form" onSubmit={onUpload}>
         <label>
           File

@@ -16,28 +16,28 @@ export function DashboardPortal({ data, error, onGo }: Props) {
 
   return (
     <div className="portal dashboard">
-      <header className="page-head">
-        <div>
-          <p className="eyebrow">Dashboard</p>
+      <header className="desk-mast">
+        <div className="desk-mast-inner">
+          <p className="eyebrow gold">Your desk</p>
           <h1>Hi {user.full_name.split(' ')[0]}</h1>
           <p className="muted">
             {user.headline || 'Add a headline on your profile'}
             {user.location ? ` · ${user.location}` : ''}
           </p>
-        </div>
-        <div className="hero-actions">
-          {has_resume ? (
-            <button type="button" className="btn btn-primary" onClick={() => onGo('matches')}>
-              View matches
+          <div className="hero-actions">
+            {has_resume ? (
+              <button type="button" className="btn btn-gold" onClick={() => onGo('matches')}>
+                View matches
+              </button>
+            ) : (
+              <button type="button" className="btn btn-gold" onClick={() => onGo('resume')}>
+                Upload resume
+              </button>
+            )}
+            <button type="button" className="btn btn-ghost-light" onClick={() => onGo('profile')}>
+              Edit profile
             </button>
-          ) : (
-            <button type="button" className="btn btn-primary" onClick={() => onGo('resume')}>
-              Upload resume
-            </button>
-          )}
-          <button type="button" className="btn btn-ghost" onClick={() => onGo('profile')}>
-            Edit profile
-          </button>
+          </div>
         </div>
       </header>
 
@@ -45,7 +45,7 @@ export function DashboardPortal({ data, error, onGo }: Props) {
         {PIPELINE.map((key) => (
           <button type="button" className="pipe-card" key={key} onClick={() => onGo('tracker')}>
             <strong>{pipeline[key] || 0}</strong>
-            <span>{key}</span>
+            <span>{key[0].toUpperCase() + key.slice(1)}</span>
           </button>
         ))}
       </section>
