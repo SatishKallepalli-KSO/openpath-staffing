@@ -1,0 +1,26 @@
+# Free-tier live stack on Render (web) + Neon Free (Postgres)
+# After first deploy: https://openpath-staffing.onrender.com
+#
+# DATABASE_URL must be set in the Render dashboard to your Neon pooled
+# connection string (do not commit secrets).
+
+services:
+  - type: web
+    name: openpath-staffing
+    runtime: docker
+    plan: free
+    region: oregon
+    healthCheckPath: /healthz
+    envVars:
+      - key: APP_URL
+        value: https://openpath-staffing.onrender.com
+      - key: ADMIN_PIN
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: ADZUNA_APP_ID
+        sync: false
+      - key: ADZUNA_APP_KEY
+        sync: false

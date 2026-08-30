@@ -1,0 +1,24 @@
+{
+  "name": "openpath-staffing",
+  "private": true,
+  "version": "0.1.0",
+  "description": "OpenPath Staffing — resume match, tailor, apply, and track",
+  "workspaces": [
+    "apps/web",
+    "apps/api"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=@openpath/web",
+    "dev:web": "npm run dev --workspace=@openpath/web",
+    "dev:api": "npm run dev --workspace=@openpath/api",
+    "build": "npm run build --workspace=@openpath/web",
+    "preview": "npm run preview --workspace=@openpath/web",
+    "lint": "npm run lint --workspace=@openpath/web",
+    "typecheck": "npm run build --workspace=@openpath/web",
+    "test:api": "npm run test --workspace=@openpath/api",
+    "start": "npm run start --workspace=@openpath/api"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,16 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: openpath-staffing:0.1.0
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-}
+      APP_URL: http://localhost:8000
+      ADMIN_PIN: ${ADMIN_PIN:?Set ADMIN_PIN in .env}
+      JWT_SECRET: ${JWT_SECRET:-dev-openpath-jwt-secret-change-me}
+      ALLOW_INSECURE_DEFAULT_PIN: ${ALLOW_INSECURE_DEFAULT_PIN:-}
+      ADZUNA_APP_ID: ${ADZUNA_APP_ID:-}
+      ADZUNA_APP_KEY: ${ADZUNA_APP_KEY:-}
