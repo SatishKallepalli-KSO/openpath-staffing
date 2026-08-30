@@ -4,11 +4,11 @@ Same pattern as murali-transport: Render Free Docker web service + Neon Free Pos
 
 ## Render
 
-1. Push this repo to GitHub.
-2. On Render, New + Blueprint, connect the repo (or open `https://render.com/deploy?repo=YOUR_REPO_URL`).
+1. Push this repo to GitHub (already at https://github.com/SatishKallepalli-KSO/openpath-staffing).
+2. Open: https://render.com/deploy?repo=https://github.com/SatishKallepalli-KSO/openpath-staffing
 3. Set `ADMIN_PIN` (8+ characters). `JWT_SECRET` is generated.
 4. Set `DATABASE_URL` to the Neon **pooled** URL (see [DATABASE.md](./DATABASE.md)).
-5. Health: `https://YOUR-SERVICE.onrender.com/healthz`
+5. Health: `https://openpath-staffing.onrender.com/healthz`
 
 Without `DATABASE_URL` the container falls back to SQLite on the local disk. That data disappears when Render sleeps or rebuilds. Use Neon for anything you want to keep.
 

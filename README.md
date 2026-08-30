@@ -2,7 +2,7 @@
 
 Candidate-first staffing site: upload a resume, match roles, make small edits, apply, and track progress.
 
-**Stack:** React 19 + Vite (web), Node.js Express (API), Render Free Docker, Neon Free Postgres.
+**Repo:** https://github.com/SatishKallepalli-KSO/openpath-staffing
 
 ## What this is
 
