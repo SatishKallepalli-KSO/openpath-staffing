@@ -3,6 +3,7 @@ import {
   adminCreateJob,
   adminJobs,
   adminLogin,
+  batchApply,
   fetchApplications,
   fetchDashboard,
   fetchJob,
@@ -21,6 +22,8 @@ import {
   type Application,
   type Dashboard,
   type Job,
+  type MatchSources,
+  type BoardLink,
   type Resume,
   type TailorSuggestion,
   type User,
@@ -103,7 +106,13 @@ export default function App() {
   const [dashboard, setDashboard] = useState<Dashboard | null>(null)
   const [resumes, setResumes] = useState<Resume[]>([])
   const [jobs, setJobs] = useState<Job[]>([])
-  const [matchMeta, setMatchMeta] = useState({ count: 0, live: false })
+  const [matchMeta, setMatchMeta] = useState({
+    count: 0,
+    live: false,
+    sources: {} as MatchSources,
+    boardLinks: [] as BoardLink[],
+  })
+  const [appliedIds, setAppliedIds] = useState<number[]>([])
   const [job, setJob] = useState<Job | null>(null)
   const [suggestion, setSuggestion] = useState<TailorSuggestion | null>(null)
   const [tailorText, setTailorText] = useState('')
@@ -155,12 +164,20 @@ export default function App() {
       fetchResumes(token).then(setResumes).catch((err: Error) => setError(err.message))
     }
     if (portal === 'matches') {
-      fetchMatches(token)
-        .then((data) => {
+      setBusy(true)
+      Promise.all([fetchMatches(token), fetchApplications(token)])
+        .then(([data, apps]) => {
           setJobs(data.jobs)
-          setMatchMeta({ count: data.count, live: data.live_jobs })
+          setMatchMeta({
+            count: data.count,
+            live: data.live_jobs,
+            sources: data.sources || {},
+            boardLinks: data.board_links || [],
+          })
+          setAppliedIds(apps.filter((row) => row.status === 'applied').map((row) => row.job_id))
         })
         .catch((err: Error) => setError(err.message))
+        .finally(() => setBusy(false))
     }
     if (portal === 'job' && jobId) {
       fetchJob(token, jobId).then(setJob).catch((err: Error) => setError(err.message))
@@ -270,7 +287,12 @@ export default function App() {
         min_score: Number(form.get('min_score') || 35),
       })
       setJobs(data.jobs)
-      setMatchMeta({ count: data.count, live: data.live_jobs })
+      setMatchMeta({
+        count: data.count,
+        live: data.live_jobs,
+        sources: data.sources || {},
+        boardLinks: data.board_links || [],
+      })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not filter')
     } finally {
@@ -315,6 +337,46 @@ export default function App() {
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not save tailored resume')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function applyTopMatches() {
+    if (!token) return
+    const ok = window.confirm(
+      'We will mark your strongest matches as applied on your desk and open the first employer apply page. You complete each employer form. We do not log into LinkedIn, Indeed, or Greenhouse.',
+    )
+    if (!ok) return
+    setBusy(true)
+    setError('')
+    try {
+      const result = await batchApply(token, { limit: 5, min_score: 55 })
+      if (!result.count) {
+        setError('No new roles at 55% match or higher. Lower the floor or apply to a single role from the list.')
+        return
+      }
+      const first = result.applications.find((row) => row.apply_url?.startsWith('http'))
+      if (first?.apply_url) window.open(first.apply_url, '_blank', 'noopener')
+      setAppliedIds((ids) => [...new Set([...ids, ...result.applications.map((row) => row.job_id)])])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not queue applications')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function applyMatch(job: Job) {
+    if (!token) return
+    setBusy(true)
+    setError('')
+    try {
+      const applied = await upsertApplication(token, { job_id: job.id, status: 'applied' })
+      const url = applied.apply_url || job.source_url
+      if (url?.startsWith('http')) window.open(url, '_blank', 'noopener')
+      setAppliedIds((ids) => (ids.includes(job.id) ? ids : [...ids, job.id]))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not record application')
     } finally {
       setBusy(false)
     }
@@ -441,10 +503,15 @@ export default function App() {
             jobs={jobs}
             count={matchMeta.count}
             live={matchMeta.live}
+            sources={matchMeta.sources}
+            boardLinks={matchMeta.boardLinks}
+            appliedIds={appliedIds}
             error={error}
             busy={busy}
             onFilter={onFilter}
             onOpen={(id) => go('job', { id: String(id) })}
+            onApply={(job) => void applyMatch(job)}
+            onBatchApply={() => void applyTopMatches()}
           />
         ) : null}
         {portal === 'job' ? (

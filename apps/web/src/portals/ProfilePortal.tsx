@@ -63,7 +63,9 @@ export function ResumePortal({ resumes, error, busy, onUpload }: ResumeProps) {
         <div className="desk-mast-inner">
           <p className="eyebrow gold">The document</p>
           <h1>Resume</h1>
-          <p className="muted">PDF, Word, or plain text. We store extracted text so matching still works after a restart.</p>
+          <p className="muted">
+            PDF, Word, or plain text. After you save, we search public job APIs and rank roles to this document.
+          </p>
         </div>
       </header>
       <form className="stack-form" onSubmit={onUpload}>
@@ -77,7 +79,7 @@ export function ResumePortal({ resumes, error, busy, onUpload }: ResumeProps) {
         </label>
         {error ? <p className="form-error">{error}</p> : null}
         <button className="btn btn-primary" type="submit" disabled={busy}>
-          {busy ? 'Reading…' : 'Save resume'}
+          {busy ? 'Reading and searching roles…' : 'Save and find roles'}
         </button>
       </form>
       {latest ? (

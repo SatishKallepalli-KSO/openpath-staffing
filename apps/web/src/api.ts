@@ -73,6 +73,8 @@ export type Job = {
   remote: string
   source: string
   source_url: string
+  apply_host?: string
+  can_apply?: boolean
   department: string
   seniority: string
   description: string
@@ -176,6 +178,30 @@ export async function uploadResume(token: string, file?: File, text?: string) {
   return api<Resume>('/v1/resumes', { method: 'POST', headers: authHeaders(token), body })
 }
 
+export type MatchSources = {
+  remotive?: number
+  arbeitnow?: number
+  themuse?: number
+  adzuna?: number
+  remoteok?: number
+  himalayas?: number
+  jobicy?: number
+}
+
+export type BoardLink = {
+  name: string
+  url: string
+}
+
+export type MatchResult = {
+  resume_id: number
+  live_jobs: boolean
+  sources: MatchSources
+  board_links?: BoardLink[]
+  count: number
+  jobs: Job[]
+}
+
 export function fetchMatches(
   token: string,
   params: { min_score?: number; remote?: string; search?: string; department?: string } = {},
@@ -186,7 +212,7 @@ export function fetchMatches(
   if (params.search) q.set('search', params.search)
   if (params.department) q.set('department', params.department)
   const suffix = q.toString() ? `?${q}` : ''
-  return api<{ resume_id: number; live_jobs: boolean; count: number; jobs: Job[] }>(`/v1/matches${suffix}`, {
+  return api<MatchResult>(`/v1/matches${suffix}`, {
     headers: authHeaders(token),
   })
 }
@@ -220,6 +246,20 @@ export function upsertApplication(
   body: { job_id: number; status?: string; resume_id?: number; notes?: string },
 ) {
   return api<Application & { apply_url?: string }>('/v1/applications', {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(body),
+  })
+}
+
+export type BatchApplyResult = {
+  count: number
+  note: string
+  applications: (Application & { apply_url?: string })[]
+}
+
+export function batchApply(token: string, body: { limit?: number; min_score?: number; job_ids?: number[] } = {}) {
+  return api<BatchApplyResult>('/v1/applications/batch', {
     method: 'POST',
     headers: authHeaders(token),
     body: JSON.stringify(body),

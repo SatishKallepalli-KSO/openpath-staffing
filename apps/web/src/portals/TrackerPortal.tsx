@@ -17,7 +17,10 @@ export function TrackerPortal({ rows, error, onStatus, onOpen }: Props) {
         <div className="desk-mast-inner">
           <p className="eyebrow gold">Pipeline</p>
           <h1>Application tracker</h1>
-          <p className="muted">Move each role as you hear back. This is your record, not the employer&apos;s.</p>
+          <p className="muted">
+            Move each role as you hear back. Open the employer apply page to finish their form. This is your
+            record, not the employer&apos;s ATS.
+          </p>
         </div>
       </header>
       {error ? <p className="form-error">{error}</p> : null}
@@ -32,6 +35,7 @@ export function TrackerPortal({ rows, error, onStatus, onOpen }: Props) {
                 <th>Company</th>
                 <th>Status</th>
                 <th>Updated</th>
+                <th>Apply</th>
               </tr>
             </thead>
             <tbody>
@@ -56,6 +60,15 @@ export function TrackerPortal({ rows, error, onStatus, onOpen }: Props) {
                     </select>
                   </td>
                   <td>{formatDate(row.updated_at)}</td>
+                  <td>
+                    {row.source_url?.startsWith('http') ? (
+                      <a className="linkish" href={row.source_url} target="_blank" rel="noopener noreferrer">
+                        Open apply page
+                      </a>
+                    ) : (
+                      <span className="muted">No public link</span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

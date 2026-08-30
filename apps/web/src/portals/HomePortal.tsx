@@ -231,7 +231,7 @@ export function AboutPortal({ onGo }: AboutProps) {
               <span>02</span>
               <div>
                 <strong>Score the desk</strong>
-                <p>Roles in our catalog (and live search when configured) ranked to that document.</p>
+                <p>Public job APIs plus our catalog, scored against that document.</p>
               </div>
             </li>
             <li>

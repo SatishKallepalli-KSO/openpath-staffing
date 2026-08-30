@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node --watch --experimental-sqlite src/index.js",
     "start": "node --experimental-sqlite src/index.js",
-    "test": "node --test --experimental-sqlite tests/matching.test.js tests/tailor.test.js"
+    "test": "node --test --experimental-sqlite tests/matching.test.js tests/tailor.test.js tests/job-feeds.test.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",

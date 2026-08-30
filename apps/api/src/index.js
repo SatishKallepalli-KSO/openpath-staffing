@@ -27,7 +27,8 @@ import {
 import { extractFromUpload, parsedOrThrow } from './resume.js'
 import { parseResume, rankJobs } from './matching.js'
 import { suggestEdits } from './tailor.js'
-import { adzunaEnabled, refreshAdzuna } from './adzuna.js'
+import { adzunaEnabled } from './adzuna.js'
+import { applyHost, boardSearchLinks, isLiveApplyUrl, liveFeedsEnabled, refreshLiveJobs, searchQuery } from './job-feeds.js'
 import { rateLimit } from './rate-limit.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -97,6 +98,8 @@ function jobOut(row) {
     remote: row.remote,
     source: row.source,
     source_url: row.source_url,
+    apply_host: applyHost(row.source_url),
+    can_apply: isLiveApplyUrl(row.source_url),
     department: row.department,
     seniority: row.seniority,
     description: row.description,
@@ -122,7 +125,7 @@ app.get('/healthz', (_req, res) => {
     status: 'ok',
     service: 'saventra-api',
     db: isPostgres ? 'postgres' : 'sqlite',
-    jobs_live: adzunaEnabled(),
+    jobs_live: liveFeedsEnabled() || adzunaEnabled(),
     timestamp: new Date().toISOString(),
   })
 })
@@ -274,6 +277,12 @@ app.post(
         await query('UPDATE users SET years_experience=$1 WHERE id=$2', [parsed.years, req.user.id])
       }
       await addActivity(req.user.id, 'resume', 'Uploaded resume', filename)
+      const q = searchQuery(parsed, req.user)
+      try {
+        await refreshLiveJobs(q)
+      } catch (err) {
+        console.warn('Live job pull after resume skipped', err.message)
+      }
       res.status(201).json(resumeOut(row))
     } catch (err) {
       fail(res, err)
@@ -323,19 +332,32 @@ app.get('/v1/matches', requireUser, async (req, res) => {
       location: req.user.location,
       years: req.user.years_experience || parseJson(resume.parsed_json, {}).years,
     }
-    const q = String(req.query.q || parsed.skills.slice(0, 4).join(' ') || req.user.target_roles || 'software')
-    if (adzunaEnabled()) {
-      try {
-        await refreshAdzuna(q)
-      } catch (err) {
-        console.warn('Adzuna refresh skipped', err.message)
-      }
+    const q = String(req.query.q || searchQuery(parsed, req.user))
+    let feedMeta = {
+      remotive: 0,
+      arbeitnow: 0,
+      themuse: 0,
+      adzuna: 0,
+      remoteok: 0,
+      himalayas: 0,
+      jobicy: 0,
     }
-    const jobs = await query('SELECT * FROM jobs ORDER BY id DESC LIMIT 200')
+    try {
+      const live = await refreshLiveJobs(q)
+      feedMeta = live.sources || feedMeta
+    } catch (err) {
+      console.warn('Live job refresh skipped', err.message)
+    }
+    const jobs = await query('SELECT * FROM jobs ORDER BY id DESC LIMIT 500')
     const minScore = Number(req.query.min_score || 35)
     const remote = String(req.query.remote || '')
     const department = String(req.query.department || '')
     let ranked = rankJobs(parsed, jobs, { minScore: Number.isFinite(minScore) ? minScore : 35 })
+    ranked.sort((a, b) => {
+      const liveDiff = Number(isLiveApplyUrl(b.source_url)) - Number(isLiveApplyUrl(a.source_url))
+      if (liveDiff) return liveDiff
+      return b.match_score - a.match_score
+    })
     if (remote) ranked = ranked.filter((j) => j.remote === remote)
     if (department) ranked = ranked.filter((j) => j.department.toLowerCase() === department.toLowerCase())
     const search = String(req.query.search || '').toLowerCase()
@@ -346,7 +368,9 @@ app.get('/v1/matches', requireUser, async (req, res) => {
     }
     res.json({
       resume_id: resume.id,
-      live_jobs: adzunaEnabled(),
+      live_jobs: Object.values(feedMeta).some((n) => Number(n) > 0),
+      sources: feedMeta,
+      board_links: boardSearchLinks(q, req.user.location),
       count: ranked.length,
       jobs: ranked.slice(0, 50).map(jobOut),
     })
@@ -421,6 +445,32 @@ app.get('/v1/applications', requireUser, async (req, res) => {
   }
 })
 
+async function recordApplication(user, job, status, resumeId, notes) {
+  const existing = await queryOne('SELECT * FROM applications WHERE user_id = $1 AND job_id = $2', [user.id, job.id])
+  if (existing) {
+    await query(
+      `UPDATE applications SET status=$1, notes=$2, resume_id=COALESCE($3, resume_id),
+       applied_at = CASE WHEN $1 = 'applied' AND applied_at IS NULL THEN $4 ELSE applied_at END,
+       updated_at=$4 WHERE id=$5`,
+      [status, notes || existing.notes, resumeId, nowIso(), existing.id],
+    )
+  } else {
+    await query(
+      `INSERT INTO applications (user_id, job_id, resume_id, status, notes, applied_at, updated_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+      [user.id, job.id, resumeId, status, notes, status === 'saved' ? null : nowIso(), nowIso()],
+    )
+  }
+  const row = await queryOne('SELECT * FROM applications WHERE user_id = $1 AND job_id = $2', [user.id, job.id])
+  await addActivity(
+    user.id,
+    status,
+    status === 'saved' ? `Saved ${job.title}` : `Marked ${job.title} as ${status}`,
+    job.company,
+  )
+  return { ...row, apply_url: job.source_url, source_url: job.source_url, title: job.title, company: job.company }
+}
+
 app.post('/v1/applications', requireUser, async (req, res) => {
   try {
     const job = await queryOne('SELECT * FROM jobs WHERE id = $1', [Number(req.body?.job_id)])
@@ -433,36 +483,73 @@ app.post('/v1/applications', requireUser, async (req, res) => {
       : 'applied'
     const resumeId = Number(req.body?.resume_id) || null
     const notes = String(req.body?.notes || '').slice(0, 1000)
-    const existing = await queryOne('SELECT * FROM applications WHERE user_id = $1 AND job_id = $2', [
-      req.user.id,
-      job.id,
-    ])
-    let row
-    if (existing) {
-      row = await queryOne(
-        `UPDATE applications SET status=$1, notes=$2, resume_id=COALESCE($3, resume_id),
-         applied_at = CASE WHEN $1 = 'applied' AND applied_at IS NULL THEN $4 ELSE applied_at END,
-         updated_at=$4 WHERE id=$5 RETURNING *`,
-        [status, notes || existing.notes, resumeId, nowIso(), existing.id],
-      )
-    } else {
-      row = await queryOne(
-        `INSERT INTO applications (user_id, job_id, resume_id, status, notes, applied_at, updated_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-        [req.user.id, job.id, resumeId, status, notes, status === 'saved' ? null : nowIso(), nowIso()],
-      )
-    }
-    await addActivity(
-      req.user.id,
-      status,
-      status === 'saved' ? `Saved ${job.title}` : `Marked ${job.title} as ${status}`,
-      job.company,
-    )
-    res.status(existing ? 200 : 201).json({ ...row, apply_url: job.source_url, title: job.title, company: job.company })
+    const row = await recordApplication(req.user, job, status, resumeId, notes)
+    res.status(201).json(row)
   } catch (err) {
     fail(res, err)
   }
 })
+
+app.post(
+  '/v1/applications/batch',
+  requireUser,
+  rateLimit({ max: 6, windowSec: 3600, key: 'batch-apply' }),
+  async (req, res) => {
+    try {
+      const resume = await latestOriginalResume(req.user.id)
+      if (!resume) {
+        res.status(400).json({ detail: 'Upload a resume before applying' })
+        return
+      }
+      const parsed = {
+        ...parseJson(resume.parsed_json, parseResume(resume.raw_text)),
+        location: req.user.location,
+        years: req.user.years_experience || parseJson(resume.parsed_json, {}).years,
+      }
+      const limit = Math.min(8, Math.max(1, Number(req.body?.limit || 5)))
+      const minScore = Number(req.body?.min_score || 55)
+      const requested = Array.isArray(req.body?.job_ids) ? req.body.job_ids.map(Number).filter((n) => n > 0) : []
+      let jobs
+      if (requested.length) {
+        jobs = []
+        for (const id of requested.slice(0, limit)) {
+          const row = await queryOne('SELECT * FROM jobs WHERE id = $1', [id])
+          if (row) jobs.push(row)
+        }
+      } else {
+        const all = await query('SELECT * FROM jobs ORDER BY id DESC LIMIT 500')
+        const ranked = rankJobs(parsed, all, { minScore: Number.isFinite(minScore) ? minScore : 55 })
+        const live = ranked.filter((j) => isLiveApplyUrl(j.source_url))
+        jobs = (live.length ? live : ranked).slice(0, limit)
+      }
+      const already = await query('SELECT job_id FROM applications WHERE user_id = $1 AND status = $2', [
+        req.user.id,
+        'applied',
+      ])
+      const appliedIds = new Set(already.map((a) => Number(a.job_id)))
+      const applications = []
+      for (const job of jobs) {
+        if (appliedIds.has(Number(job.id))) continue
+        const row = await recordApplication(
+          req.user,
+          job,
+          'applied',
+          resume.id,
+          'Queued from resume match. Complete the employer apply page.',
+        )
+        applications.push(row)
+        if (applications.length >= limit) break
+      }
+      res.json({
+        count: applications.length,
+        note: 'We track these on your desk and return employer apply links. We do not log into LinkedIn, Indeed, or Greenhouse for you.',
+        applications,
+      })
+    } catch (err) {
+      fail(res, err)
+    }
+  },
+)
 
 app.patch('/v1/applications/:id', requireUser, async (req, res) => {
   try {

@@ -1,27 +1,91 @@
 import type { FormEvent } from 'react'
-import type { Job, TailorSuggestion } from '../api'
+import type { BoardLink, Job, MatchSources, TailorSuggestion } from '../api'
 import { matchTone } from '../lib/format'
+
+function sourceLine(sources: MatchSources | undefined, live: boolean) {
+  const labels: [keyof MatchSources, string][] = [
+    ['remotive', 'Remotive'],
+    ['arbeitnow', 'Arbeitnow'],
+    ['themuse', 'The Muse'],
+    ['remoteok', 'Remote OK'],
+    ['himalayas', 'Himalayas'],
+    ['jobicy', 'Jobicy'],
+    ['adzuna', 'Adzuna'],
+  ]
+  const parts = labels
+    .filter(([key]) => Number(sources?.[key] || 0) > 0)
+    .map(([key, label]) => `${label} (${sources?.[key]})`)
+  if (parts.length) return `Live boards searched: ${parts.join(', ')}.`
+  if (live) return 'Searched public job APIs. Catalog roles still rank if a board is quiet right now.'
+  return 'Ranking SAVENTRA catalog roles until live boards respond.'
+}
 
 type MatchesProps = {
   jobs: Job[]
   count: number
   live: boolean
+  sources?: MatchSources
+  boardLinks?: BoardLink[]
+  appliedIds: number[]
   error: string
   busy: boolean
   onFilter: (event: FormEvent<HTMLFormElement>) => void
   onOpen: (id: number) => void
+  onApply: (job: Job) => void
+  onBatchApply: () => void
 }
 
-export function MatchesPortal({ jobs, count, live, error, busy, onFilter, onOpen }: MatchesProps) {
+export function MatchesPortal({
+  jobs,
+  count,
+  live,
+  sources,
+  boardLinks,
+  appliedIds,
+  error,
+  busy,
+  onFilter,
+  onOpen,
+  onApply,
+  onBatchApply,
+}: MatchesProps) {
+  const applied = new Set(appliedIds)
   return (
     <div className="portal">
       <header className="desk-mast">
         <div className="desk-mast-inner">
-          <p className="eyebrow gold">{live ? 'Catalog + live search' : 'SAVENTRA catalog'}</p>
+          <p className="eyebrow gold">{live ? 'Catalog + live boards' : 'SAVENTRA catalog'}</p>
           <h1>Roles filtered to your resume</h1>
-          <p className="muted">{busy ? 'Scoring jobs…' : `${count} roles above your match floor.`}</p>
+          <p className="muted">
+            {busy ? 'Searching public job APIs and scoring…' : `${count} roles above your match floor.`}
+          </p>
+          <p className="muted">{sourceLine(sources, live)}</p>
         </div>
       </header>
+      {boardLinks?.length ? (
+        <div className="board-links">
+          <p className="muted">
+            LinkedIn and Indeed do not publish a public jobs API we can list here. These links open a search
+            with your title filled in so you can apply on those sites yourself.
+          </p>
+          <div className="board-link-row">
+            {boardLinks.map((link) => (
+              <a key={link.name} className="btn btn-ghost" href={link.url} target="_blank" rel="noopener noreferrer">
+                Search {link.name}
+              </a>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      <div className="match-toolbar">
+        <p className="muted">
+          Apply opens the employer posting in a new tab and tracks it on your desk. We do not log into
+          LinkedIn, Indeed, or Greenhouse, and we do not submit their forms for you.
+        </p>
+        <button type="button" className="btn btn-gold" onClick={onBatchApply} disabled={busy || jobs.length === 0}>
+          Apply to top matches
+        </button>
+      </div>
       <form className="filter-bar" onSubmit={onFilter}>
         <input name="search" placeholder="Title, company, skill" />
         <select name="remote" defaultValue="">
@@ -41,32 +105,47 @@ export function MatchesPortal({ jobs, count, live, error, busy, onFilter, onOpen
       </form>
       {error ? <p className="form-error">{error}</p> : null}
       <ul className="card-grid">
-        {jobs.map((job) => (
-          <li key={job.id}>
-            <button type="button" className="job-card" onClick={() => onOpen(job.id)}>
-              <span className="job-card-top">
-                <span className="company-mark" aria-hidden>
-                  {(job.company || 'O').slice(0, 1)}
-                </span>
-                <span className={`score score-${matchTone(job.match_score)}`}>{job.match_score}% match</span>
-              </span>
-              <h3>{job.title}</h3>
-              <p>
-                {job.company} · {job.location}
-              </p>
-              <p className="muted">
-                {job.remote} · {job.source} · {job.seniority}
-              </p>
-              <div className="chips">
-                {(job.matched_skills || []).slice(0, 5).map((s) => (
-                  <span className="chip" key={s}>
-                    {s}
+        {jobs.map((job) => {
+          const queued = applied.has(job.id)
+          const applyLabel = queued
+            ? 'Queued'
+            : job.can_apply && job.apply_host
+              ? `Apply on ${job.apply_host}`
+              : 'Apply and track'
+          return (
+            <li key={job.id}>
+              <article className="job-card">
+                <button type="button" className="job-card-main" onClick={() => onOpen(job.id)}>
+                  <span className="job-card-top">
+                    <span className="company-mark" aria-hidden>
+                      {(job.company || 'O').slice(0, 1)}
+                    </span>
+                    <span className={`score score-${matchTone(job.match_score)}`}>{job.match_score}% match</span>
                   </span>
-                ))}
-              </div>
-            </button>
-          </li>
-        ))}
+                  <h3>{job.title}</h3>
+                  <p>
+                    {job.company} · {job.location}
+                  </p>
+                  <p className="muted">
+                    {job.remote} · {job.source} · {job.seniority}
+                  </p>
+                  <div className="chips">
+                    {(job.matched_skills || []).slice(0, 5).map((s) => (
+                      <span className="chip" key={s}>
+                        {s}
+                      </span>
+                    ))}
+                  </div>
+                </button>
+                <div className="job-card-actions">
+                  <button type="button" className="btn btn-gold" onClick={() => onApply(job)} disabled={busy || queued}>
+                    {applyLabel}
+                  </button>
+                </div>
+              </article>
+            </li>
+          )
+        })}
       </ul>
     </div>
   )
@@ -108,7 +187,7 @@ export function JobPortal({ job, error, busy, onTailor, onSave, onApply }: JobPr
               Save role
             </button>
             <button type="button" className="btn btn-ghost-light" onClick={onApply} disabled={busy}>
-              Apply and track
+              {job.can_apply && job.apply_host ? `Apply on ${job.apply_host}` : 'Apply and track'}
             </button>
           </div>
         </div>
