@@ -1,5 +1,5 @@
 import { query, queryOne, nowIso } from './db.js'
-import { extractSkills, isRoleTitle } from './matching.js'
+import { extractSkills, inferSeniority, isRoleTitle } from './matching.js'
 import { adzunaEnabled, refreshAdzuna } from './adzuna.js'
 
 const FETCH_MS = 12000
@@ -35,12 +35,18 @@ export function jobMatchesQuery(job, q) {
 
 export function isUsaJob(job) {
   const loc = String(job.location || '')
+  if (!loc.trim() || /^(n\/a|na|none|unknown|not specified)$/i.test(loc.trim())) return false
   const nonUs =
     /\b(germany|berlin|munich|india|bangalore|hyderabad|london|united kingdom|\buk\b|england|france|paris|netherlands|amsterdam|israel|tel aviv|australia|sydney|italy|milan|sweden|stockholm|poland|singapore|brazil|ireland|dublin|japan|tokyo|canada|toronto|mexico|spain|barcelona)\b/i
   const us =
     /\b(united states|usa|u\.s\.a?|\bus\b|remote,? us|nationwide|california|new york|texas|washington|seattle|austin|boston|chicago|denver|atlanta|miami|colorado|georgia|florida|illinois|massachusetts|san francisco|san jose|los angeles|nyc|bay area)\b/i
   if (nonUs.test(loc) && !us.test(loc)) return false
   return true
+}
+
+export function isUsOnlyLocation(job) {
+  if (!isUsaJob(job)) return false
+  return !/\b(canada|united kingdom|\buk\b|germany|india|israel|australia|ireland|mexico)\b/i.test(String(job.location || ''))
 }
 
 export const AGGREGATOR_SOURCES = new Set(['remotive', 'arbeitnow', 'themuse', 'remoteok', 'himalayas', 'jobicy'])
@@ -51,6 +57,10 @@ export function isTrustedUsListing(job) {
     return false
   }
   return isUsaJob(job)
+}
+
+export function isCandidateListing(job) {
+  return isTrustedUsListing(job) && isLiveApplyUrl(job.source_url)
 }
 
 export function isLiveApplyUrl(url) {
@@ -98,7 +108,7 @@ export function boardSearchLinks(q, location) {
     {
       name: 'LinkedIn',
       kind: 'linkedin',
-      blurb: 'Easy Apply search with your title filled in',
+      blurb: 'Search with your title filled in',
       url: `https://www.linkedin.com/jobs/search/?keywords=${enc(keywords)}&location=${enc(loc)}`,
     },
     {
@@ -218,10 +228,24 @@ async function fetchJsonPost(url, body) {
   return res.json()
 }
 
+function greenhouseJobId(url) {
+  const raw = String(url || '')
+  return raw.match(/gh_jid=(\d+)/i)?.[1] || raw.match(/\/jobs\/(\d{5,})/)?.[1] || ''
+}
+
 export async function upsertLiveJob(job) {
   if (!job?.title || !isLiveApplyUrl(job.source_url)) return null
-  const existing = await queryOne('SELECT id FROM jobs WHERE source_url = $1', [job.source_url])
+  const url = String(job.source_url).slice(0, 500)
+  const existing = await queryOne('SELECT id FROM jobs WHERE source_url = $1', [url])
   if (existing) return existing.id
+  const gh = greenhouseJobId(url)
+  if (gh) {
+    const dup = await queryOne(
+      `SELECT id FROM jobs WHERE source_url LIKE $1 OR source_url LIKE $2 LIMIT 1`,
+      [`%gh_jid=${gh}%`, `%/jobs/${gh}%`],
+    )
+    if (dup) return dup.id
+  }
   const skills = job.skills_csv || skillsFrom(`${job.title} ${job.description}`)
   const row = await queryOne(
     `INSERT INTO jobs (title, company, location, remote, source, source_url, department, seniority, description, requirements, skills_csv, posted_at, created_at)
@@ -232,9 +256,9 @@ export async function upsertLiveJob(job) {
       String(job.location || 'Remote').slice(0, 160),
       job.remote === 'hybrid' || job.remote === 'onsite' ? job.remote : 'remote',
       String(job.source || 'live').slice(0, 40),
-      String(job.source_url).slice(0, 500),
+      url,
       String(job.department || '').slice(0, 80),
-      String(job.seniority || 'mid').slice(0, 40),
+      inferSeniority(job).slice(0, 40),
       stripHtml(job.description).slice(0, 2500),
       String(job.requirements || '').slice(0, 1500),
       skills.slice(0, 400),
@@ -319,8 +343,8 @@ async function pullGreenhouse(q) {
           source: 'greenhouse',
           source_url: hit.absolute_url,
           department: hit.departments?.[0]?.name || '',
-          seniority: /senior|staff|principal|director/i.test(hit.title || '') ? 'senior' : 'mid',
-          description: `${company} career posting on Greenhouse.`,
+          seniority: inferSeniority({ title: hit.title }),
+          description: 'Career posting on Greenhouse.',
           requirements: '',
           posted_at: String(hit.updated_at || hit.created_at || '').slice(0, 10),
         }
@@ -346,7 +370,7 @@ async function pullLever(q) {
           source: 'lever',
           source_url: hit.hostedUrl || hit.applyUrl,
           department: hit.categories?.team || '',
-          seniority: /senior|staff|principal/i.test(hit.text || '') ? 'senior' : 'mid',
+          seniority: inferSeniority({ title: hit.text }),
           description: stripHtml(hit.descriptionPlain || hit.description || ''),
           requirements: '',
           posted_at: hit.createdAt ? new Date(hit.createdAt).toISOString().slice(0, 10) : '',
@@ -376,7 +400,7 @@ async function pullAmazon(q) {
       source: 'amazon',
       source_url: hit.job_path ? `https://www.amazon.jobs${hit.job_path}` : hit.url_next_step,
       department: hit.job_family || hit.business_category || '',
-      seniority: /senior|principal|ii+|iii/i.test(hit.title || '') ? 'senior' : 'mid',
+      seniority: inferSeniority({ title: hit.title }),
       description: stripHtml(hit.description_short || hit.description || ''),
       requirements: stripHtml(hit.basic_qualifications || ''),
       posted_at: '',
@@ -403,7 +427,7 @@ async function pullNvidia(q) {
         ? `https://nvidia.wd5.myworkdayjobs.com/en-US/NVIDIAExternalCareerSite${hit.externalPath}`
         : '',
       department: 'Engineering',
-      seniority: /senior|staff|principal/i.test(hit.title || '') ? 'senior' : 'mid',
+      seniority: inferSeniority({ title: hit.title }),
       description: 'NVIDIA career posting.',
       requirements: '',
       posted_at: '',

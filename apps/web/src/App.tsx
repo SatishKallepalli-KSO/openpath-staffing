@@ -323,14 +323,15 @@ export default function App() {
     try {
       const saved = await saveTailored(token, job.id, tailorText, suggestion?.resume_id)
       if (alsoApply) {
-        const applied = await upsertApplication(token, {
+        if (job.source_url?.startsWith('http')) window.open(job.source_url, '_blank', 'noopener')
+        const submitted = window.confirm(
+          'Opened the employer apply page. Mark as applied only if you submitted their form.',
+        )
+        await upsertApplication(token, {
           job_id: job.id,
-          status: 'applied',
+          status: submitted ? 'applied' : 'saved',
           resume_id: saved.id,
         })
-        if (applied.apply_url && applied.apply_url.startsWith('http')) {
-          window.open(applied.apply_url, '_blank', 'noopener')
-        }
         go('tracker')
       } else {
         go('job', { id: String(job.id) })
@@ -345,7 +346,7 @@ export default function App() {
   async function applyTopMatches() {
     if (!token) return
     const ok = window.confirm(
-      'We will mark your strongest matches as applied on your desk and open the first employer apply page. You complete each employer form. We do not log into LinkedIn, Indeed, or Greenhouse.',
+      'We will save your strongest matches and open the first employer apply page. Mark applied only after you submit their form. We do not log into LinkedIn, Indeed, or Greenhouse.',
     )
     if (!ok) return
     setBusy(true)
@@ -353,14 +354,15 @@ export default function App() {
     try {
       const result = await batchApply(token, { limit: 5, min_score: 55 })
       if (!result.count) {
-        setError('No new roles at 55% match or higher. Lower the floor or apply to a single role from the list.')
+        setError('No new US roles at 55% match or higher. Lower the floor or open a single role from the list.')
         return
       }
       const first = result.applications.find((row) => row.apply_url?.startsWith('http'))
       if (first?.apply_url) window.open(first.apply_url, '_blank', 'noopener')
-      setAppliedIds((ids) => [...new Set([...ids, ...result.applications.map((row) => row.job_id)])])
+      const data = await fetchMatches(token)
+      setJobs(data.jobs)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not queue applications')
+      setError(err instanceof Error ? err.message : 'Could not open apply pages')
     } finally {
       setBusy(false)
     }
@@ -368,13 +370,16 @@ export default function App() {
 
   async function applyMatch(job: Job) {
     if (!token) return
+    const url = job.source_url
+    if (url?.startsWith('http')) window.open(url, '_blank', 'noopener')
+    const submitted = window.confirm(
+      `Opened the ${job.apply_via || 'employer'} apply page for ${job.title}. Mark as applied only if you submitted their form. Cancel keeps it saved.`,
+    )
     setBusy(true)
     setError('')
     try {
-      const applied = await upsertApplication(token, { job_id: job.id, status: 'applied' })
-      const url = applied.apply_url || job.source_url
-      if (url?.startsWith('http')) window.open(url, '_blank', 'noopener')
-      setAppliedIds((ids) => (ids.includes(job.id) ? ids : [...ids, job.id]))
+      await upsertApplication(token, { job_id: job.id, status: submitted ? 'applied' : 'saved' })
+      setAppliedIds((ids) => (submitted && !ids.includes(job.id) ? [...ids, job.id] : ids))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not record application')
     } finally {
@@ -384,13 +389,17 @@ export default function App() {
 
   async function applyJob(status: 'saved' | 'applied') {
     if (!token || !job) return
+    if (status === 'applied' && job.source_url?.startsWith('http')) {
+      window.open(job.source_url, '_blank', 'noopener')
+      const submitted = window.confirm(
+        `Opened the ${job.apply_via || 'employer'} apply page. Mark as applied only if you submitted their form.`,
+      )
+      if (!submitted) status = 'saved'
+    }
     setBusy(true)
     setError('')
     try {
-      const applied = await upsertApplication(token, { job_id: job.id, status })
-      if (status === 'applied' && applied.apply_url?.startsWith('http')) {
-        window.open(applied.apply_url, '_blank', 'noopener')
-      }
+      await upsertApplication(token, { job_id: job.id, status })
       go('tracker')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not record application')

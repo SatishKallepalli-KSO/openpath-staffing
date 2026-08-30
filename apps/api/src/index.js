@@ -28,7 +28,7 @@ import { extractFromUpload, parsedOrThrow } from './resume.js'
 import { parseResume, rankJobs } from './matching.js'
 import { suggestEdits } from './tailor.js'
 import { adzunaEnabled } from './adzuna.js'
-import { applyBrand, applyHost, boardSearchLinks, isLiveApplyUrl, isTrustedUsListing, liveFeedsEnabled, refreshLiveJobs, searchQuery } from './job-feeds.js'
+import { applyBrand, applyHost, boardSearchLinks, isCandidateListing, isLiveApplyUrl, isUsOnlyLocation, liveFeedsEnabled, refreshLiveJobs, searchQuery } from './job-feeds.js'
 import { rateLimit } from './rate-limit.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -144,11 +144,11 @@ app.get('/healthz', (_req, res) => {
 
 app.get('/v1/stats', async (_req, res) => {
   try {
-    const jobs = await queryOne('SELECT COUNT(*) AS n FROM jobs')
+    const jobs = await query('SELECT source, source_url, location FROM jobs')
     const users = await queryOne('SELECT COUNT(*) AS n FROM users')
     const apps = await queryOne('SELECT COUNT(*) AS n FROM applications')
     res.json({
-      jobs: Number(jobs?.n || 0),
+      jobs: jobs.filter((j) => isCandidateListing(j)).length,
       candidates: Number(users?.n || 0),
       applications: Number(apps?.n || 0),
     })
@@ -305,10 +305,13 @@ app.post(
 app.get('/v1/jobs/public', async (_req, res) => {
   try {
     const rows = await query(
-      `SELECT id, title, company, location, remote, department, seniority, posted_at
-       FROM jobs ORDER BY posted_at DESC, id DESC LIMIT 6`,
+      `SELECT id, title, company, location, remote, department, seniority, posted_at, source, source_url
+       FROM jobs ORDER BY posted_at DESC, id DESC LIMIT 80`,
     )
-    res.json(rows)
+    const featured = rows
+      .filter((j) => isCandidateListing(j) && isUsOnlyLocation(j))
+      .slice(0, 6)
+    res.json(featured)
   } catch (err) {
     fail(res, err)
   }
@@ -359,7 +362,7 @@ app.get('/v1/matches', requireUser, async (req, res) => {
     const remote = String(req.query.remote || '')
     const department = String(req.query.department || '')
     let ranked = rankJobs(parsed, jobs, { minScore: Number.isFinite(minScore) ? minScore : 35 }).filter(
-      (j) => isTrustedUsListing(j),
+      (j) => isCandidateListing(j),
     )
     ranked.sort((a, b) => {
       const liveDiff = Number(isLiveApplyUrl(b.source_url)) - Number(isLiveApplyUrl(a.source_url))
@@ -447,7 +450,7 @@ app.get('/v1/applications', requireUser, async (req, res) => {
        WHERE a.user_id = $1 ORDER BY a.updated_at DESC`,
       [req.user.id],
     )
-    res.json(rows)
+    res.json(rows.filter((row) => isLiveApplyUrl(row.source_url) || String(row.source_url || '').length === 0))
   } catch (err) {
     fail(res, err)
   }
@@ -523,32 +526,33 @@ app.post(
       } else {
         const all = await query('SELECT * FROM jobs ORDER BY id DESC LIMIT 500')
         const ranked = rankJobs(parsed, all, { minScore: Number.isFinite(minScore) ? minScore : 55 }).filter(
-          (j) => isTrustedUsListing(j),
+          (j) => isCandidateListing(j),
         )
-        const live = ranked.filter((j) => isLiveApplyUrl(j.source_url))
-        jobs = (live.length ? live : ranked).slice(0, limit)
+        jobs = ranked.slice(0, limit)
       }
-      const already = await query('SELECT job_id FROM applications WHERE user_id = $1 AND status = $2', [
+      const already = await query('SELECT job_id FROM applications WHERE user_id = $1 AND status IN ($2, $3)', [
         req.user.id,
         'applied',
+        'saved',
       ])
       const appliedIds = new Set(already.map((a) => Number(a.job_id)))
       const applications = []
       for (const job of jobs) {
         if (appliedIds.has(Number(job.id))) continue
+        if (!isLiveApplyUrl(job.source_url)) continue
         const row = await recordApplication(
           req.user,
           job,
-          'applied',
+          'saved',
           resume.id,
-          'Queued from resume match. Complete the employer apply page.',
+          'Opened employer apply page. Mark applied after you submit their form.',
         )
         applications.push(row)
         if (applications.length >= limit) break
       }
       res.json({
         count: applications.length,
-        note: 'We track these on your desk and return employer apply links. We do not log into LinkedIn, Indeed, or Greenhouse for you.',
+        note: 'Saved on your desk with employer apply links. Mark applied after you submit. We do not submit Greenhouse, LinkedIn, or Indeed forms for you.',
         applications,
       })
     } catch (err) {
@@ -593,8 +597,11 @@ app.get('/v1/dashboard', requireUser, async (req, res) => {
     let topMatches = []
     if (resume) {
       const parsed = parsedFromResume(resume, req.user)
-      const jobs = await query('SELECT * FROM jobs ORDER BY id DESC LIMIT 80')
-      topMatches = rankJobs(parsed, jobs, { minScore: 40 }).slice(0, 4).map(jobOut)
+      const jobs = await query('SELECT * FROM jobs ORDER BY id DESC LIMIT 200')
+      topMatches = rankJobs(parsed, jobs, { minScore: 45 })
+        .filter((j) => isCandidateListing(j))
+        .slice(0, 4)
+        .map(jobOut)
     }
     res.json({
       user: publicUser(req.user),

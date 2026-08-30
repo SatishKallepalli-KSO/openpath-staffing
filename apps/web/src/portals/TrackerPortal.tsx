@@ -18,8 +18,8 @@ export function TrackerPortal({ rows, error, onStatus, onOpen }: Props) {
           <p className="eyebrow gold">Pipeline</p>
           <h1>Application tracker</h1>
           <p className="muted">
-            Move each role as you hear back. Open the employer apply page to finish their form. This is your
-            record, not the employer&apos;s ATS.
+            Move each role as you hear back. Open the employer apply page, then mark applied after you
+            submit. This is your record, not the employer&apos;s ATS.
           </p>
         </div>
       </header>

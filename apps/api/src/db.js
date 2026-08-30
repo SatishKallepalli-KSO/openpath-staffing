@@ -263,35 +263,22 @@ async function seedDemoUser() {
     ],
   )
   const parsed = parseResume(DEMO_RESUME)
-  const resume = await queryOne(
+  await query(
     `INSERT INTO resumes (user_id, filename, raw_text, parsed_json, kind, created_at)
-     VALUES ($1,$2,$3,$4,'original',$5) RETURNING id`,
+     VALUES ($1,$2,$3,$4,'original',$5)`,
     [user.id, 'jordan-hale-resume.txt', DEMO_RESUME, JSON.stringify(parsed), nowIso()],
   )
-  const jobs = await query('SELECT id, title, company FROM jobs ORDER BY id ASC LIMIT 4')
-  const statuses = ['applied', 'interviewing', 'saved', 'applied']
-  for (let i = 0; i < jobs.length; i += 1) {
-    const job = jobs[i]
-    await query(
-      `INSERT INTO applications (user_id, job_id, resume_id, status, notes, applied_at, updated_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-      [
-        user.id,
-        job.id,
-        resume.id,
-        statuses[i],
-        '',
-        statuses[i] === 'saved' ? null : nowIso(),
-        nowIso(),
-      ],
-    )
-    await addActivity(
-      user.id,
-      statuses[i],
-      statuses[i] === 'saved' ? `Saved ${job.title}` : `Applied to ${job.title}`,
-      job.company,
-    )
-  }
+}
+
+async function dropCatalogApplications() {
+  await query(
+    `DELETE FROM applications WHERE job_id IN (
+      SELECT id FROM jobs WHERE source_url LIKE '%example.com%' OR source_url LIKE '%example.org%'
+    )`,
+  )
+  await query(
+    `DELETE FROM activity WHERE detail IN ('Harbor Labs', 'Northwind Health', 'Civic Metrics', 'Parcelly')`,
+  )
 }
 
 async function renameLegacyBrand() {
@@ -338,6 +325,7 @@ export async function initDb() {
   await seedJobs()
   await renameLegacyBrand()
   await seedDemoUser()
+  await dropCatalogApplications()
 }
 
 export async function closeDb() {

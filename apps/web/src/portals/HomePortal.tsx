@@ -318,9 +318,9 @@ export function AuthPortal({ mode, error, busy, onSubmit, onSwitch }: AuthProps)
             {signup ? 'Sign in' : 'Create an account'}
           </button>
         </p>
-        {!signup ? (
+        {!signup && import.meta.env.DEV ? (
           <p className="demo-note">
-            Preview the desk: <code>{BRAND.demoEmail}</code> / <code>{BRAND.demoPassword}</code>
+            Local preview: <code>{BRAND.demoEmail}</code> / <code>{BRAND.demoPassword}</code>
           </p>
         ) : null}
       </div>

@@ -64,9 +64,11 @@ export function MatchesPortal({
         <div className="board-links">
           <h2>Search the big boards and career sites</h2>
           <p className="muted">
+      <p className="muted">
             LinkedIn, Indeed, and ZipRecruiter are where US recruiters post most. Those tiles open their
-            search. Scored roles below come from Greenhouse, Lever, Amazon.jobs, and NVIDIA careers in the
-            United States. We dropped Remotive and other remote aggregators.
+            search. Scored roles below are live US listings from Greenhouse, Lever, Amazon.jobs, and NVIDIA.
+            Catalog sample jobs are not shown here.
+          </p>
           </p>
           <div className="board-card-grid">
             {boardLinks.map((link) => (
@@ -86,11 +88,11 @@ export function MatchesPortal({
       ) : null}
       <div className="match-toolbar">
         <p className="muted">
-          Apply opens the employer posting in a new tab and tracks it on your desk. We do not log into
-          LinkedIn, Indeed, or Greenhouse, and we do not submit their forms for you.
+          Apply opens the employer posting. We mark applied only after you confirm you submitted. We do not
+          log into LinkedIn, Indeed, or Greenhouse, and we do not submit their forms.
         </p>
         <button type="button" className="btn btn-gold" onClick={onBatchApply} disabled={busy || jobs.length === 0}>
-          Apply to top matches
+          Open top apply pages
         </button>
       </div>
       <form className="filter-bar" onSubmit={onFilter}>
@@ -111,14 +113,20 @@ export function MatchesPortal({
         </button>
       </form>
       {error ? <p className="form-error">{error}</p> : null}
+      {jobs.length === 0 && !busy ? (
+        <p className="muted">
+          No live US listings above this match floor. Lower the floor or try a different title on your
+          profile.
+        </p>
+      ) : null}
       <ul className="card-grid">
         {jobs.map((job) => {
           const queued = applied.has(job.id)
           const applyLabel = queued
-            ? 'Queued'
+            ? 'Applied'
             : job.can_apply
-              ? `Easy Apply · ${job.apply_via || job.apply_host || 'employer'}`
-              : 'Apply and track'
+              ? `Apply on ${job.apply_via || job.apply_host || 'employer site'}`
+              : 'No public apply link'
           return (
             <li key={job.id}>
               <article className="job-card">
@@ -134,7 +142,8 @@ export function MatchesPortal({
                     {job.company} · {job.location}
                   </p>
                   <p className="muted">
-                    {job.remote} · {job.apply_via || job.source} · {job.seniority}
+                    {job.remote} · {job.seniority} · {job.apply_via || job.source}
+                    {job.posted_at ? ` · posted ${job.posted_at}` : ''}
                   </p>
                   <div className="chips">
                     {(job.matched_skills || []).slice(0, 5).map((s) => (
@@ -145,7 +154,7 @@ export function MatchesPortal({
                   </div>
                 </button>
                 <div className="job-card-actions">
-                  <button type="button" className="btn btn-gold" onClick={() => onApply(job)} disabled={busy || queued}>
+                  <button type="button" className="btn btn-gold" onClick={() => onApply(job)} disabled={busy || queued || !job.can_apply}>
                     {applyLabel}
                   </button>
                 </div>
@@ -180,6 +189,7 @@ export function JobPortal({ job, error, busy, onTailor, onSave, onApply }: JobPr
           <h1>{job.title}</h1>
           <p className="muted">
             {job.location} · {job.remote} · {job.seniority}
+            {job.posted_at ? ` · posted ${job.posted_at}` : ''}
           </p>
           {job.match_score != null ? (
             <p className={`score score-${matchTone(job.match_score)} inline`}>
@@ -193,10 +203,10 @@ export function JobPortal({ job, error, busy, onTailor, onSave, onApply }: JobPr
             <button type="button" className="btn btn-ghost-light" onClick={onSave} disabled={busy}>
               Save role
             </button>
-            <button type="button" className="btn btn-ghost-light" onClick={onApply} disabled={busy}>
+            <button type="button" className="btn btn-ghost-light" onClick={onApply} disabled={busy || !job.can_apply}>
               {job.can_apply
-                ? `Easy Apply · ${job.apply_via || job.apply_host || 'employer'}`
-                : 'Apply and track'}
+                ? `Apply on ${job.apply_via || job.apply_host || 'employer site'}`
+                : 'No public apply link'}
             </button>
           </div>
         </div>
@@ -266,7 +276,7 @@ export function TailorPortal({ suggestion, text, error, busy, onText, onSave, on
           Save this version
         </button>
         <button type="button" className="btn btn-warm" onClick={onApply} disabled={busy}>
-          Save, apply, and track
+          Save and open apply page
         </button>
       </div>
     </div>

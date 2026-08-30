@@ -299,6 +299,73 @@ function overlap(a, b) {
   return hit.length / a.length
 }
 
+export function isLeadershipTitle(title) {
+  return /\b(director|vice president|\bvp\b|chief |head of|people partner|engineering manager|manager)\b/i.test(
+    String(title || ''),
+  )
+}
+
+export function isIcTitle(title) {
+  const t = String(title || '')
+  if (isLeadershipTitle(t)) return false
+  return /\b(engineer|developer|designer|analyst|scientist|specialist)\b/i.test(t)
+}
+
+export function resumeLooksIc(titles) {
+  const list = titles || []
+  return list.some((t) => isIcTitle(t)) && !list.some((t) => isLeadershipTitle(t))
+}
+
+export function inferSeniority(job) {
+  const t = normalize(`${job.seniority || ''} ${job.title || ''}`)
+  if (/\b(intern|junior|entry)\b/.test(t)) return 'junior'
+  if (/\b(director|vice president|\bvp\b|chief|head of|people partner)\b/.test(t)) return 'director'
+  if (/\b(staff|principal)\b/.test(t)) return 'staff'
+  if (/\bmanager\b/.test(t)) return 'manager'
+  if (/\blead\b/.test(t)) return 'lead'
+  if (/\b(senior|sr\.?)\b/.test(t)) return 'senior'
+  const given = String(job.seniority || '').toLowerCase()
+  return given || 'mid'
+}
+
+export function skillsExcludingCompany(skills, company) {
+  const c = normalize(company)
+  if (!c) return skills || []
+  const parts = new Set(tokenize(company).filter((t) => t.length > 2))
+  return (skills || []).filter((s) => {
+    const n = normalize(s)
+    if (n === c) return false
+    if (parts.has(n)) return false
+    return true
+  })
+}
+
+export function listingKey(job) {
+  const url = String(job.source_url || '')
+  const gh = url.match(/gh_jid=(\d+)/i)?.[1] || url.match(/\/jobs\/(\d{5,})/)?.[1]
+  if (gh) return `jid:${gh}`
+  try {
+    const u = new URL(url)
+    return `${u.hostname.replace(/^www\./, '')}${u.pathname.replace(/\/$/, '')}`.toLowerCase()
+  } catch {
+    return `${normalize(job.company)}|${normalize(job.title)}|${normalize(job.location)}`
+  }
+}
+
+export function dedupeJobs(jobs) {
+  const seen = new Set()
+  const out = []
+  for (const job of jobs) {
+    const urlKey = listingKey(job)
+    const titleKey = `${normalize(job.company)}|${normalize(job.title)}|${normalize(job.location)}`
+    if (seen.has(urlKey) || seen.has(titleKey)) continue
+    seen.add(urlKey)
+    seen.add(titleKey)
+    out.push(job)
+  }
+  return out
+}
+
 function titleScore(resumeTitles, jobTitle) {
   const job = normalize(jobTitle)
   const jobTokens = new Set(tokenize(jobTitle))
@@ -309,13 +376,16 @@ function titleScore(resumeTitles, jobTitle) {
       best = Math.max(best, 1)
       continue
     }
-    const tokens = tokenize(t)
-    const shared = tokens.filter((x) => jobTokens.has(x) && x.length > 2)
+    const tokens = tokenize(t).filter((x) => x.length > 2 && !['with', 'and', 'the'].includes(x))
+    const shared = tokens.filter((x) => jobTokens.has(x))
     best = Math.max(best, Math.min(1, shared.length / Math.max(3, tokens.length)))
   }
-  const hints = TITLE_HINTS.filter((h) => job.includes(h))
-  if (hints.length && resumeTitles.some((t) => hints.some((h) => normalize(t).includes(h)))) {
-    best = Math.max(best, 0.55)
+  const specific = ['full stack', 'front end', 'frontend', 'back end', 'backend', 'data scientist', 'product manager']
+  if (specific.some((h) => job.includes(h) && resumeTitles.some((t) => normalize(t).includes(h)))) {
+    best = Math.max(best, 0.75)
+  }
+  if (resumeLooksIc(resumeTitles) && isLeadershipTitle(jobTitle)) {
+    return Math.min(best, 0.12)
   }
   return best
 }
@@ -336,31 +406,39 @@ function seniorityScore(resumeYears, seniority) {
   const y = Number(resumeYears) || 0
   const s = normalize(seniority)
   if (s.includes('intern') || s.includes('junior') || s.includes('entry')) return y <= 3 ? 1 : 0.55
-  if (s.includes('staff') || s.includes('principal') || s.includes('director')) return y >= 7 ? 1 : 0.4
+  if (s.includes('director') || s.includes('vp') || s.includes('chief') || s.includes('people partner')) {
+    return y >= 10 ? 1 : 0.22
+  }
+  if (s.includes('manager') || s.includes('staff') || s.includes('principal')) return y >= 8 ? 1 : 0.32
   if (s.includes('senior') || s.includes('lead')) return y >= 4 ? 1 : 0.5
   return y >= 2 ? 0.85 : 0.65
 }
 
 export function scoreJob(resume, job) {
-  const jobBlob = `${job.title} ${job.company} ${job.description} ${job.requirements} ${job.skills_csv || ''}`
-  const jobSkills = extractSkills(jobBlob)
-  const resumeSkills = resume.skills || []
+  const jobBlob = `${job.title} ${job.description} ${job.requirements} ${job.skills_csv || ''}`
+  const jobSkills = skillsExcludingCompany(extractSkills(jobBlob), job.company)
+  const resumeSkills = skillsExcludingCompany(resume.skills || [], job.company)
   const skillOverlap = overlap(jobSkills.length ? jobSkills : tokenize(job.skills_csv || ''), resumeSkills)
   const reverseOverlap = overlap(resumeSkills, jobSkills)
   const title = titleScore(resume.titles || [], job.title || '')
   const loc = locationScore(resume.location || '', job.location || '', job.remote)
-  const seniority = seniorityScore(resume.years, job.seniority || '')
+  const band = inferSeniority(job)
+  const seniority = seniorityScore(resume.years, band)
   const keywordHit = overlap(
     tokenize(`${job.title} ${job.skills_csv || ''}`).filter((t) => t.length > 3),
     resume.keywords || [],
   )
 
-  const score =
+  let score =
     40 * Math.max(skillOverlap, reverseOverlap * 0.7) +
     25 * title +
     15 * keywordHit +
     12 * loc +
     8 * seniority
+
+  if (resumeLooksIc(resume.titles || []) && isLeadershipTitle(job.title)) {
+    score = Math.min(score, 40)
+  }
 
   const missing = jobSkills.filter((s) => !resumeSkills.includes(s)).slice(0, 12)
   const matched = jobSkills.filter((s) => resumeSkills.includes(s)).slice(0, 12)
@@ -370,15 +448,24 @@ export function scoreJob(resume, job) {
     missing,
     matched,
     jobSkills,
+    seniority: band,
   }
 }
 
 export function rankJobs(resume, jobs, { minScore = 0 } = {}) {
-  return jobs
-    .map((job) => {
-      const result = scoreJob(resume, job)
-      return { ...job, match_score: result.score, missing_skills: result.missing, matched_skills: result.matched }
-    })
-    .filter((j) => j.match_score >= minScore)
-    .sort((a, b) => b.match_score - a.match_score)
+  return dedupeJobs(
+    jobs
+      .map((job) => {
+        const result = scoreJob(resume, job)
+        return {
+          ...job,
+          match_score: result.score,
+          missing_skills: result.missing,
+          matched_skills: result.matched,
+          seniority: result.seniority || job.seniority,
+        }
+      })
+      .filter((j) => j.match_score >= minScore)
+      .sort((a, b) => b.match_score - a.match_score),
+  )
 }

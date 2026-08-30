@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { applyBrand, boardSearchLinks, isLiveApplyUrl, isTrustedUsListing, jobMatchesQuery, searchQuery } from '../src/job-feeds.js'
+import { applyBrand, boardSearchLinks, isCandidateListing, isLiveApplyUrl, isTrustedUsListing, isUsaJob, jobMatchesQuery, searchQuery } from '../src/job-feeds.js'
 
 describe('live job query filter', () => {
   it('keeps a software role for an engineer query', () => {
@@ -117,6 +117,30 @@ describe('apply urls and board search', () => {
         source: 'greenhouse',
         source_url: 'https://job-boards.greenhouse.io/gitlab/jobs/1',
         location: 'Italy',
+      }),
+      false,
+    )
+    assert.equal(
+      isCandidateListing({
+        source: 'company',
+        source_url: 'https://example.com/jobs/harbor-labs-fullstack',
+        location: 'San Jose, CA',
+      }),
+      false,
+    )
+    assert.equal(
+      isCandidateListing({
+        source: 'greenhouse',
+        source_url: 'https://job-boards.greenhouse.io/figma/jobs/1',
+        location: 'San Francisco, CA',
+      }),
+      true,
+    )
+    assert.equal(
+      isUsaJob({
+        location: 'N/A',
+        source: 'greenhouse',
+        source_url: 'https://job-boards.greenhouse.io/stripe/jobs/1',
       }),
       false,
     )
