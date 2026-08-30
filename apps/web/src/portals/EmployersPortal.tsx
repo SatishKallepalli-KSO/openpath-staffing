@@ -33,8 +33,13 @@ export function EmployersPortal({ onGo }: Props) {
 
   return (
     <div className="portal employers">
-      <p className="eyebrow">Hiring teams</p>
-      <h1>Tell us the role. We return a shortlist.</h1>
+      <div className="page-hero">
+        <img src="/media/board.jpg" alt="" />
+        <div>
+          <p className="eyebrow gold">Hiring teams</p>
+          <h1>Tell us the role. We return a shortlist.</h1>
+        </div>
+      </div>
       <p className="lede">
         OpenPath works retained-style search on a modern desk. You stay on the offer. We stay on
         the matching. No scrape-and-spam. No invented candidates.

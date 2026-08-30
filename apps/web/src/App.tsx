@@ -333,11 +333,27 @@ export default function App() {
     }
   }
 
-  const showBack = portal !== 'home'
+  const showBack = portal !== 'home' && portal !== 'login' && portal !== 'signup'
   const isMarketing = portal === 'home'
+  const isAuth = portal === 'login' || portal === 'signup'
 
   return (
     <div className={isMarketing ? 'site site-home' : 'site'}>
+      <div className="ticker" aria-hidden>
+        <span>Engineering</span>
+        <span>Data and AI</span>
+        <span>Product</span>
+        <span>Go to market</span>
+        <span>Finance</span>
+        <span>Operations</span>
+        <span>Bay Area · Remote US</span>
+        <span>Engineering</span>
+        <span>Data and AI</span>
+        <span>Product</span>
+        <span>Go to market</span>
+        <span>Finance</span>
+        <span>Operations</span>
+      </div>
       <header className="nav">
         <button type="button" className="brand" onClick={() => go('home')}>
           <BrandMark className="mark" />
@@ -380,7 +396,7 @@ export default function App() {
           )}
         </nav>
       </header>
-      <main className={isMarketing ? 'main-home' : 'main-app'}>
+      <main className={isMarketing ? 'main-home' : isAuth ? 'main-auth' : 'main-app'}>
         {showBack ? <PortalBack onBack={() => history.back()} label="Back" /> : null}
         {portal === 'home' ? (
           <HomePortal

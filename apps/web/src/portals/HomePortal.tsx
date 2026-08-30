@@ -1,4 +1,5 @@
-import type { FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
+import { fetchPublicJobs, type Job } from '../api'
 import { BrandMark } from '../components/BrandMark'
 
 type Props = {
@@ -10,61 +11,56 @@ type Props = {
 }
 
 const PRACTICES = [
-  { name: 'Engineering', detail: 'Full stack, platform, mobile, and quality.' },
-  { name: 'Data and AI', detail: 'Analytics, warehousing, machine learning.' },
-  { name: 'Product and design', detail: 'Product managers, researchers, designers.' },
-  { name: 'Go to market', detail: 'Sales, success, and marketing operators.' },
-  { name: 'Finance and people', detail: 'FP&A, accounting, recruiting, HRIS.' },
-  { name: 'Operations', detail: 'Supply chain, warehouse, and program leads.' },
+  { name: 'Engineering', detail: 'Full stack, platform, mobile, and quality.', img: '/media/hero.jpg' },
+  { name: 'Data and AI', detail: 'Analytics, warehousing, machine learning.', img: '/media/city.jpg' },
+  { name: 'Product and design', detail: 'Product managers, researchers, designers.', img: '/media/talent.jpg' },
+  { name: 'Go to market', detail: 'Sales, success, and marketing operators.', img: '/media/board.jpg' },
+  { name: 'Finance and people', detail: 'FP&A, accounting, recruiting, HRIS.', img: '/media/city.jpg' },
+  { name: 'Operations', detail: 'Supply chain, warehouse, and program leads.', img: '/media/hero.jpg' },
 ]
 
 export function HomePortal({ jobs, candidates, applications, signedIn, onGo }: Props) {
+  const [featured, setFeatured] = useState<Job[]>([])
+
+  useEffect(() => {
+    fetchPublicJobs()
+      .then((rows) => setFeatured(rows as Job[]))
+      .catch(() => undefined)
+  }, [])
+
   return (
     <div className="home">
       <section className="hero-bleed">
+        <div className="hero-photo" aria-hidden>
+          <img src="/media/hero.jpg" alt="" />
+        </div>
         <div className="wrap hero-grid">
-          <div>
-            <p className="eyebrow gold">A staffing firm for a hard market</p>
-            <h1>We place people into roles they can actually win.</h1>
+          <div className="hero-copy">
+            <p className="eyebrow gold">OpenPath Staffing · Bay Area and remote US</p>
+            <h1>
+              Placement with
+              <em> the precision of a desk,</em> not the noise of a board.
+            </h1>
             <p className="lede">
-              OpenPath is a candidate-first staffing company. Upload a resume, see scored matches,
-              make small honest edits, apply, and track every conversation. Hiring teams send a
-              brief. We shortlist people whose work already fits.
+              We read your resume, score live roles, tailor a few honest lines, and track every
+              conversation. Hiring teams send a brief. We return people whose work already fits.
             </p>
             <div className="hero-actions">
               <button type="button" className="btn btn-gold" onClick={() => onGo(signedIn ? 'dashboard' : 'signup')}>
-                {signedIn ? 'Open your desk' : 'Find a role'}
+                {signedIn ? 'Open your desk' : 'Start as talent'}
               </button>
               <button type="button" className="btn btn-ghost-light" onClick={() => onGo('employers')}>
-                Hire talent
+                Brief a search
               </button>
             </div>
+            <p className="hero-fine">Engineering · Data · Product · GTM · Finance · Operations</p>
           </div>
-          <aside className="hero-panel" aria-label="How OpenPath works">
-            <p className="eyebrow">The OpenPath desk</p>
-            <ol className="hero-steps">
-              <li>
-                <span>01</span>
-                <div>
-                  <strong>Read the resume</strong>
-                  <p>Skills, titles, and years. Not a keyword dump.</p>
-                </div>
-              </li>
-              <li>
-                <span>02</span>
-                <div>
-                  <strong>Score the market</strong>
-                  <p>Roles ranked by fit. Weak matches stay out of the way.</p>
-                </div>
-              </li>
-              <li>
-                <span>03</span>
-                <div>
-                  <strong>Tailor, apply, track</strong>
-                  <p>Small edits. A living pipeline. No black hole.</p>
-                </div>
-              </li>
-            </ol>
+          <aside className="hero-frame">
+            <img src="/media/talent.jpg" alt="Candidate in a quiet working session" />
+            <div className="hero-caption">
+              <span>01 / The desk</span>
+              <strong>Resume in. Roles ranked. Status you can see.</strong>
+            </div>
           </aside>
         </div>
       </section>
@@ -81,25 +77,56 @@ export function HomePortal({ jobs, candidates, applications, signedIn, onGo }: P
           </div>
           <div>
             <strong>{applications}</strong>
-            <span>Applications under management</span>
+            <span>Searches in motion</span>
           </div>
           <div>
-            <strong>US</strong>
-            <span>Remote, hybrid, and on-site</span>
+            <strong>Same day</strong>
+            <span>Profile to first matches</span>
           </div>
         </div>
       </section>
 
       <section className="wrap section">
+        <div className="section-head row-head">
+          <div>
+            <p className="eyebrow">On the market</p>
+            <h2>A few roles the desk is working now.</h2>
+          </div>
+          <button type="button" className="btn btn-ghost" onClick={() => onGo(signedIn ? 'matches' : 'signup')}>
+            See matches
+          </button>
+        </div>
+        <ul className="featured-grid">
+          {featured.map((job) => (
+            <li key={job.id}>
+              <button type="button" className="featured-card" onClick={() => onGo(signedIn ? 'matches' : 'signup')}>
+                <span className="featured-dept">{job.department || job.seniority}</span>
+                <h3>{job.title}</h3>
+                <p>
+                  {job.company}
+                  <span>
+                    {job.location} · {job.remote}
+                  </span>
+                </p>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section className="wrap section practice-section">
         <div className="section-head">
           <p className="eyebrow">Practices</p>
-          <h2>Specialist search, not a general job board.</h2>
+          <h2>Specialist search across six desks.</h2>
         </div>
-        <ul className="practice-grid">
+        <ul className="practice-rich">
           {PRACTICES.map((p) => (
             <li key={p.name}>
-              <h3>{p.name}</h3>
-              <p>{p.detail}</p>
+              <img src={p.img} alt="" />
+              <div>
+                <h3>{p.name}</h3>
+                <p>{p.detail}</p>
+              </div>
             </li>
           ))}
         </ul>
@@ -107,62 +134,51 @@ export function HomePortal({ jobs, candidates, applications, signedIn, onGo }: P
 
       <section className="split-bleed">
         <div className="wrap split-audience">
-          <article>
-            <p className="eyebrow">For talent</p>
-            <h2>Your search, with a desk behind it.</h2>
-            <p>
-              Sign up once. We match your resume to live roles, suggest the smallest edits that
-              help you clear ATS filters, and keep status honest: saved, applied, interviewing,
-              offered, rejected.
-            </p>
-            <button type="button" className="btn btn-primary" onClick={() => onGo(signedIn ? 'resume' : 'signup')}>
-              Upload a resume
-            </button>
+          <article className="audience-card">
+            <img src="/media/talent.jpg" alt="" />
+            <div>
+              <p className="eyebrow gold">For talent</p>
+              <h2>Your search, with a partner behind it.</h2>
+              <p>
+                Sign up once. We match your resume, suggest the smallest edits that help you clear
+                ATS filters, and keep status honest through offer or no.
+              </p>
+              <button type="button" className="btn btn-gold" onClick={() => onGo(signedIn ? 'resume' : 'signup')}>
+                Upload a resume
+              </button>
+            </div>
           </article>
-          <article>
-            <p className="eyebrow">For hiring teams</p>
-            <h2>A shortlist, not a pile of CVs.</h2>
-            <p>
-              Send the role, the must-haves, and the location. We score our book against that
-              brief and return people who already look like a fit. You stay on the hiring
-              decision. We stay on the search.
-            </p>
-            <button type="button" className="btn btn-primary" onClick={() => onGo('employers')}>
-              Request a shortlist
-            </button>
+          <article className="audience-card">
+            <img src="/media/board.jpg" alt="" />
+            <div>
+              <p className="eyebrow gold">For hiring teams</p>
+              <h2>A shortlist, not a pile of CVs.</h2>
+              <p>
+                Send the role, the must-haves, and the location. We score our book against that
+                brief. You stay on the offer. We stay on the search.
+              </p>
+              <button type="button" className="btn btn-gold" onClick={() => onGo('employers')}>
+                Request a shortlist
+              </button>
+            </div>
           </article>
         </div>
       </section>
 
-      <section className="wrap section">
-        <div className="section-head">
-          <p className="eyebrow">How we differ</p>
-          <h2>Built like a firm. Run like a modern desk.</h2>
-        </div>
-        <div className="compare-grid">
-          <figure>
-            <figcaption>Typical board</figcaption>
-            <ul className="plain">
-              <li>Spray two hundred applications</li>
-              <li>One generic resume for every posting</li>
-              <li>Silence after you click Apply</li>
-            </ul>
-          </figure>
-          <figure className="compare-us">
-            <figcaption>OpenPath</figcaption>
-            <ul className="plain">
-              <li>Fewer roles, scored to your resume</li>
-              <li>Small, truthful edits per job</li>
-              <li>A tracker you own, not a black hole</li>
-            </ul>
-          </figure>
+      <section className="quote-bleed">
+        <div className="wrap quote-inner">
+          <p className="eyebrow gold">The standard</p>
+          <blockquote>
+            Fewer roles. Better fit. No fiction on the resume. A pipeline you actually own.
+          </blockquote>
         </div>
       </section>
 
       <section className="cta-bleed">
+        <img src="/media/city.jpg" alt="" />
         <div className="wrap cta-row">
           <div>
-            <h2>Start the search today.</h2>
+            <h2>The next search starts on this desk.</h2>
             <p>Candidates create a profile in minutes. Hiring teams send a brief the same day.</p>
           </div>
           <div className="hero-actions">
@@ -183,12 +199,17 @@ type AboutProps = { onGo: (portal: string) => void }
 
 export function AboutPortal({ onGo }: AboutProps) {
   return (
-    <div className="portal">
-      <p className="eyebrow">The firm</p>
-      <h1>OpenPath Staffing is built for people tired of the black hole.</h1>
+    <div className="portal about-rich">
+      <div className="page-hero">
+        <img src="/media/city.jpg" alt="" />
+        <div>
+          <p className="eyebrow gold">The firm</p>
+          <h1>Built for people tired of the black hole.</h1>
+        </div>
+      </div>
       <p className="lede">
-        Hiring got slower and more automated. We exist so candidates spend energy on roles they
-        can win, and so companies see a shortlist instead of noise.
+        Hiring got slower and more automated. OpenPath exists so candidates spend energy on roles
+        they can win, and so companies see a shortlist instead of noise.
       </p>
       <div className="split">
         <section className="panel">
@@ -232,7 +253,11 @@ type AuthProps = {
 export function AuthPortal({ mode, error, busy, onSubmit, onSwitch }: AuthProps) {
   const signup = mode === 'signup'
   return (
-    <div className="auth-shell">
+    <div className="auth-split">
+      <div className="auth-visual">
+        <img src="/media/board.jpg" alt="" />
+        <p>A quieter way to run a search.</p>
+      </div>
       <div className="auth-card">
         <BrandMark className="mark-lg" />
         <p className="eyebrow">OpenPath Staffing</p>

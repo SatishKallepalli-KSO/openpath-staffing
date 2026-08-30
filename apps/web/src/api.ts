@@ -121,6 +121,12 @@ export type TailorSuggestion = {
   warnings: string[]
 }
 
+export function fetchPublicJobs() {
+  return api<Pick<Job, 'id' | 'title' | 'company' | 'location' | 'remote' | 'department' | 'seniority' | 'posted_at'>[]>(
+    '/v1/jobs/public',
+  )
+}
+
 export function fetchStats() {
   return api<{ jobs: number; candidates: number; applications: number }>('/v1/stats')
 }

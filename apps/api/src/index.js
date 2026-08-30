@@ -281,6 +281,18 @@ app.post(
   },
 )
 
+app.get('/v1/jobs/public', async (_req, res) => {
+  try {
+    const rows = await query(
+      `SELECT id, title, company, location, remote, department, seniority, posted_at
+       FROM jobs ORDER BY posted_at DESC, id DESC LIMIT 6`,
+    )
+    res.json(rows)
+  } catch (err) {
+    fail(res, err)
+  }
+})
+
 app.get('/v1/jobs/:id', requireUser, async (req, res) => {
   try {
     const job = await queryOne('SELECT * FROM jobs WHERE id = $1', [Number(req.params.id)])
