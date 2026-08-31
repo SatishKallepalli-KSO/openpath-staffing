@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS users (
   location TEXT NOT NULL DEFAULT '',
   target_roles TEXT NOT NULL DEFAULT '',
   years_experience INTEGER NOT NULL DEFAULT 0,
+  linkedin_url TEXT NOT NULL DEFAULT '',
   created_at TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS resumes (
@@ -125,6 +126,7 @@ CREATE TABLE IF NOT EXISTS users (
   location TEXT NOT NULL DEFAULT '',
   target_roles TEXT NOT NULL DEFAULT '',
   years_experience INTEGER NOT NULL DEFAULT 0,
+  linkedin_url TEXT NOT NULL DEFAULT '',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE TABLE IF NOT EXISTS resumes (
@@ -322,10 +324,22 @@ export async function initDb() {
       )
     `)
   }
+  await ensureUserColumns()
   await seedJobs()
   await renameLegacyBrand()
   await seedDemoUser()
   await dropCatalogApplications()
+}
+
+async function ensureUserColumns() {
+  if (isPostgres) {
+    await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS linkedin_url TEXT NOT NULL DEFAULT ''`)
+    return
+  }
+  const cols = sqlite.prepare('PRAGMA table_info(users)').all()
+  if (!cols.some((c) => c.name === 'linkedin_url')) {
+    sqlite.exec(`ALTER TABLE users ADD COLUMN linkedin_url TEXT NOT NULL DEFAULT ''`)
+  }
 }
 
 export async function closeDb() {

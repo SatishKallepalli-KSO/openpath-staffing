@@ -18,6 +18,7 @@ import {
   createUser,
   getAdminPin,
   loginUser,
+  normalizeLinkedinUrl,
   publicUser,
   requireAdmin,
   requireUser,
@@ -28,7 +29,7 @@ import { extractFromUpload, parsedOrThrow } from './resume.js'
 import { jobFamily, parseResume, rankJobs, resumeFamily } from './matching.js'
 import { suggestEdits } from './tailor.js'
 import { adzunaEnabled } from './adzuna.js'
-import { applyBrand, applyHost, boardSearchLinks, isCandidateListing, isLiveApplyUrl, isUsOnlyLocation, liveFeedsEnabled, refreshLiveJobs, searchQuery } from './job-feeds.js'
+import { applyBrand, applyHost, boardSearchLinks, isCandidateListing, isLiveApplyUrl, isUsOnlyLocation, linkedinSearchLinks, liveFeedsEnabled, refreshLiveJobs, searchQuery } from './job-feeds.js'
 import { rateLimit } from './rate-limit.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -232,10 +233,11 @@ app.patch('/v1/me', requireUser, async (req, res) => {
     const years = Number(req.body?.years_experience ?? req.user.years_experience ?? 0)
     const years_experience = Number.isFinite(years) ? Math.max(0, Math.min(50, Math.round(years))) : 0
     const full_name = String(req.body?.full_name ?? req.user.full_name).trim().slice(0, 120)
+    const linkedin_url = normalizeLinkedinUrl(req.body?.linkedin_url ?? req.user.linkedin_url ?? '')
     const row = await queryOne(
-      `UPDATE users SET full_name=$1, headline=$2, location=$3, target_roles=$4, years_experience=$5
-       WHERE id=$6 RETURNING *`,
-      [full_name || req.user.full_name, headline, location, target_roles, years_experience, req.user.id],
+      `UPDATE users SET full_name=$1, headline=$2, location=$3, target_roles=$4, years_experience=$5, linkedin_url=$6
+       WHERE id=$7 RETURNING *`,
+      [full_name || req.user.full_name, headline, location, target_roles, years_experience, linkedin_url, req.user.id],
     )
     res.json(publicUser(row))
   } catch (err) {
@@ -407,6 +409,8 @@ app.get('/v1/matches', requireUser, async (req, res) => {
       live_jobs: Object.values(sources).some((n) => Number(n) > 0),
       sources,
       board_links: boardSearchLinks(q, req.user.location),
+      linkedin_links: linkedinSearchLinks(q, req.user.location),
+      linkedin_url: req.user.linkedin_url || '',
       count: ranked.length,
       jobs: ranked.slice(0, 50).map(jobOut),
     })

@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { applyBrand, boardSearchLinks, isCandidateListing, isLiveApplyUrl, isTrustedUsListing, isUsaJob, jobMatchesQuery, searchQuery } from '../src/job-feeds.js'
+import { applyBrand, boardSearchLinks, isCandidateListing, isLiveApplyUrl, isTrustedUsListing, isUsaJob, jobMatchesQuery, linkedinSearchLinks, searchQuery } from '../src/job-feeds.js'
 
 describe('live job query filter', () => {
   it('keeps a software role for an engineer query', () => {
@@ -93,22 +93,37 @@ describe('apply urls and board search', () => {
   it('builds LinkedIn, Indeed, Google, Meta, and Oracle career searches', () => {
     const links = boardSearchLinks('Full stack engineer', 'San Jose, CA')
     const names = links.map((l) => l.name)
-    assert.ok(names.includes('LinkedIn'))
+    assert.equal(names.includes('LinkedIn'), false)
     assert.ok(names.includes('Indeed'))
     assert.ok(names.includes('ZipRecruiter'))
     assert.ok(names.includes('Greenhouse'))
     assert.ok(names.includes('Google'))
     assert.ok(names.includes('Meta'))
     assert.ok(names.includes('Oracle'))
-    const linkedin = links.find((l) => l.name === 'LinkedIn')
-    assert.ok(linkedin?.url.includes('linkedin.com/jobs/search'))
-    assert.ok(linkedin?.url.includes('Full%20stack'))
+    const linkedin = links.find((l) => l.name === 'Indeed')
+    assert.ok(linkedin?.url.includes('indeed.com/jobs'))
+    assert.ok(linkedin?.url.includes('fromage=1'))
+    assert.ok(linkedin?.url.includes('sort=date'))
     const google = links.find((l) => l.name === 'Google')
     assert.ok(google?.url.includes('careers.google.com') || google?.url.includes('about/careers'))
     const meta = links.find((l) => l.name === 'Meta')
     assert.ok(meta?.url.includes('metacareers.com'))
     const oracle = links.find((l) => l.name === 'Oracle')
     assert.ok(oracle?.url.includes('oracle.com'))
+  })
+
+  it('builds LinkedIn searches for recent posts and few applicants', () => {
+    const links = linkedinSearchLinks('frontend engineer', 'United States')
+    assert.equal(links.length, 3)
+    for (const link of links) {
+      assert.ok(link.url.includes('linkedin.com/jobs/search'))
+      assert.ok(link.url.includes('frontend'))
+      assert.ok(link.url.includes('sortBy=DD'))
+      assert.ok(link.url.includes('f_AL=true'))
+    }
+    assert.ok(links.some((l) => l.url.includes('f_TPR=r86400')))
+    assert.ok(links.some((l) => l.url.includes('f_EA=true')))
+    assert.ok(links.some((l) => l.url.includes('f_TPR=r604800')))
   })
 
   it('labels Greenhouse, LinkedIn, and Amazon apply destinations', () => {

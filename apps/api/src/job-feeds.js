@@ -109,22 +109,43 @@ export function applyBrand(url) {
   return host
 }
 
+export function linkedinSearchLinks(q, location) {
+  const keywords = String(q || 'software engineer').slice(0, 80)
+  const loc = String(location || 'United States').slice(0, 80)
+  const enc = encodeURIComponent
+  const base = `https://www.linkedin.com/jobs/search/?keywords=${enc(keywords)}&location=${enc(loc)}`
+  return [
+    {
+      name: 'Posted in the last 24 hours',
+      kind: 'linkedin',
+      blurb: 'Newest jobs matching your resume, Easy Apply, newest first',
+      url: `${base}&f_AL=true&f_TPR=r86400&sortBy=DD`,
+    },
+    {
+      name: 'Few applicants',
+      kind: 'linkedin',
+      blurb: 'Early applicant jobs so you can apply before the pile grows',
+      url: `${base}&f_AL=true&f_EA=true&sortBy=DD`,
+    },
+    {
+      name: 'Past week, Easy Apply',
+      kind: 'linkedin',
+      blurb: 'Last 7 days, Easy Apply, sorted by date',
+      url: `${base}&f_AL=true&f_TPR=r604800&sortBy=DD`,
+    },
+  ]
+}
+
 export function boardSearchLinks(q, location) {
   const keywords = String(q || 'software engineer').slice(0, 80)
   const loc = String(location || 'United States').slice(0, 80)
   const enc = encodeURIComponent
   return [
     {
-      name: 'LinkedIn',
-      kind: 'linkedin',
-      blurb: 'Search with your title filled in',
-      url: `https://www.linkedin.com/jobs/search/?keywords=${enc(keywords)}&location=${enc(loc)}`,
-    },
-    {
       name: 'Indeed',
       kind: 'indeed',
       blurb: 'The board most US recruiters still post on',
-      url: `https://www.indeed.com/jobs?q=${enc(keywords)}&l=${enc(loc)}`,
+      url: `https://www.indeed.com/jobs?q=${enc(keywords)}&l=${enc(loc)}&fromage=1&sort=date`,
     },
     {
       name: 'ZipRecruiter',

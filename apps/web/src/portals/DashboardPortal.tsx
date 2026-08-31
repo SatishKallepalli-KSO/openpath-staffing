@@ -40,7 +40,7 @@ export function DashboardPortal({ data, error, onGo }: Props) {
               </button>
             )}
             <button type="button" className="btn btn-ghost-light" onClick={() => onGo('profile')}>
-              Edit profile
+              {user.linkedin_url ? 'Edit profile' : 'Add LinkedIn URL'}
             </button>
           </div>
         </div>

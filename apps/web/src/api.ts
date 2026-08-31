@@ -38,6 +38,7 @@ export type User = {
   location: string
   target_roles: string
   years_experience: number
+  linkedin_url?: string
   created_at: string
 }
 
@@ -144,7 +145,7 @@ export function sendInquiry(body: {
   return api<{ id: number; created_at: string }>('/v1/inquiries', { method: 'POST', body: JSON.stringify(body) })
 }
 
-export function signup(body: { email: string; password: string; full_name: string }) {
+export function signup(body: { email: string; password: string; full_name: string; linkedin_url?: string }) {
   return api<AuthResponse>('/v1/auth/signup', { method: 'POST', body: JSON.stringify(body) })
 }
 
@@ -199,6 +200,8 @@ export type MatchResult = {
   live_jobs: boolean
   sources: MatchSources
   board_links?: BoardLink[]
+  linkedin_links?: BoardLink[]
+  linkedin_url?: string
   count: number
   jobs: Job[]
 }

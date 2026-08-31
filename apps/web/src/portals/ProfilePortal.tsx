@@ -36,6 +36,15 @@ export function ProfilePortal({ user, busy, error, onSubmit }: ProfileProps) {
           <input name="target_roles" defaultValue={user.target_roles} placeholder="Frontend, full stack" />
         </label>
         <label>
+          LinkedIn profile
+          <input
+            name="linkedin_url"
+            type="url"
+            defaultValue={user.linkedin_url || ''}
+            placeholder="https://www.linkedin.com/in/your-name"
+          />
+        </label>
+        <label>
           Years of experience
           <input name="years_experience" type="number" min={0} max={50} defaultValue={user.years_experience} />
         </label>

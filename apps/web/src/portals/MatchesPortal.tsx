@@ -24,6 +24,8 @@ type MatchesProps = {
   live: boolean
   sources?: MatchSources
   boardLinks?: BoardLink[]
+  linkedinLinks?: BoardLink[]
+  linkedinUrl?: string
   appliedIds: number[]
   error: string
   busy: boolean
@@ -32,6 +34,7 @@ type MatchesProps = {
   onApply: (job: Job) => void
   onBatchApply: () => void
   onReplaceResume: () => void
+  onAddLinkedin: () => void
 }
 
 export function MatchesPortal({
@@ -40,6 +43,8 @@ export function MatchesPortal({
   live,
   sources,
   boardLinks,
+  linkedinLinks,
+  linkedinUrl,
   appliedIds,
   error,
   busy,
@@ -48,6 +53,7 @@ export function MatchesPortal({
   onApply,
   onBatchApply,
   onReplaceResume,
+  onAddLinkedin,
 }: MatchesProps) {
   const applied = new Set(appliedIds)
   return (
@@ -62,13 +68,50 @@ export function MatchesPortal({
           <p className="muted">{sourceLine(sources, live)}</p>
         </div>
       </header>
+      {linkedinLinks?.length ? (
+        <div className="board-links linkedin-fast">
+          <h2>Apply faster on LinkedIn</h2>
+          <p className="muted">
+            LinkedIn does not let us list their jobs inside SAVENTRA. These searches use your resume title,
+            newest posts first, Easy Apply, and early-applicant jobs with fewer people in line.
+          </p>
+          {!linkedinUrl ? (
+            <p className="muted">
+              Add your LinkedIn profile on your desk so recruiters can find you.{' '}
+              <button type="button" className="linkish" onClick={onAddLinkedin}>
+                Add LinkedIn URL
+              </button>
+            </p>
+          ) : (
+            <p className="muted">
+              Your profile:{' '}
+              <a className="linkish" href={linkedinUrl} target="_blank" rel="noopener noreferrer">
+                Open LinkedIn
+              </a>
+            </p>
+          )}
+          <div className="board-card-grid">
+            {linkedinLinks.map((link) => (
+              <a
+                key={link.name}
+                className={`board-card board-${link.kind || 'generic'}`}
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <strong>{link.name}</strong>
+                <span>{link.blurb || 'Open LinkedIn'}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      ) : null}
       {boardLinks?.length ? (
         <div className="board-links">
-          <h2>Search the big boards and career sites</h2>
+          <h2>Other US boards and career sites</h2>
           <p className="muted">
-            LinkedIn, Indeed, and ZipRecruiter are where US recruiters post most. Those tiles open their
-            search. Scored roles below are live US listings from Greenhouse, Lever, Amazon.jobs, and NVIDIA.
-            Catalog sample jobs are not shown here.
+            Indeed is sorted to the last day. Scored roles below are live US listings from Greenhouse, Lever,
+            Amazon.jobs, and NVIDIA.
           </p>
           <div className="board-card-grid">
             {boardLinks.map((link) => (

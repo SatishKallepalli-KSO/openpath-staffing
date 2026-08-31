@@ -744,6 +744,10 @@ textarea {
   border-color: var(--gold);
 }
 
+.linkedin-fast .board-card {
+  border-color: rgba(154, 120, 72, 0.45);
+}
+
 .board-linkedin {
   border-color: #0a66c2;
 }

@@ -121,6 +121,8 @@ export default function App() {
     live: false,
     sources: {} as MatchSources,
     boardLinks: [] as BoardLink[],
+    linkedinLinks: [] as BoardLink[],
+    linkedinUrl: '',
   })
   const [appliedIds, setAppliedIds] = useState<number[]>([])
   const [job, setJob] = useState<Job | null>(null)
@@ -183,6 +185,8 @@ export default function App() {
             live: data.live_jobs,
             sources: data.sources || {},
             boardLinks: data.board_links || [],
+            linkedinLinks: data.linkedin_links || [],
+            linkedinUrl: data.linkedin_url || '',
           })
           setAppliedIds(apps.filter((row) => row.status === 'applied').map((row) => row.job_id))
         })
@@ -219,6 +223,7 @@ export default function App() {
         email: String(form.get('email') || ''),
         password: String(form.get('password') || ''),
         full_name: String(form.get('full_name') || ''),
+        linkedin_url: String(form.get('linkedin_url') || ''),
       }
       const result = portal === 'signup' ? await signup(body) : await login(body)
       writeToken(TOKEN_KEY, result.access_token)
@@ -252,6 +257,7 @@ export default function App() {
         location: String(form.get('location') || ''),
         target_roles: String(form.get('target_roles') || ''),
         years_experience: Number(form.get('years_experience') || 0),
+        linkedin_url: String(form.get('linkedin_url') || ''),
         email: user?.email || '',
         id: user?.id || 0,
         created_at: user?.created_at || '',
@@ -302,6 +308,8 @@ export default function App() {
         live: data.live_jobs,
         sources: data.sources || {},
         boardLinks: data.board_links || [],
+        linkedinLinks: data.linkedin_links || [],
+        linkedinUrl: data.linkedin_url || '',
       })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not filter')
@@ -527,6 +535,8 @@ export default function App() {
             live={matchMeta.live}
             sources={matchMeta.sources}
             boardLinks={matchMeta.boardLinks}
+            linkedinLinks={matchMeta.linkedinLinks}
+            linkedinUrl={matchMeta.linkedinUrl}
             appliedIds={appliedIds}
             error={error}
             busy={busy}
@@ -535,6 +545,7 @@ export default function App() {
             onApply={(job) => void applyMatch(job)}
             onBatchApply={() => void applyTopMatches()}
             onReplaceResume={() => go('resume')}
+            onAddLinkedin={() => go('profile')}
           />
         ) : null}
         {portal === 'job' ? (

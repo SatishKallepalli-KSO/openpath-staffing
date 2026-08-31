@@ -299,6 +299,12 @@ export function AuthPortal({ mode, error, busy, onSubmit, onSwitch }: AuthProps)
               <input name="full_name" autoComplete="name" required minLength={2} />
             </label>
           ) : null}
+          {signup ? (
+            <label>
+              LinkedIn profile (optional)
+              <input name="linkedin_url" type="url" placeholder="https://www.linkedin.com/in/your-name" />
+            </label>
+          ) : null}
           <label>
             Email
             <input name="email" type="email" autoComplete="email" required />
