@@ -198,6 +198,67 @@ export function boardSearchLinks(q, location) {
   ]
 }
 
+const STACK_LABEL = {
+  react: 'React',
+  'next.js': 'Next.js',
+  vue: 'Vue',
+  angular: 'Angular',
+  svelte: 'Svelte',
+  typescript: 'TypeScript',
+  'node.js': 'Node.js',
+  python: 'Python',
+  java: 'Java',
+  go: 'Go',
+  golang: 'Go',
+  'c#': 'C#',
+  'react native': 'React Native',
+  swift: 'Swift',
+  kotlin: 'Kotlin',
+  ios: 'iOS',
+  android: 'Android',
+  sql: 'SQL',
+  spark: 'Spark',
+  dbt: 'dbt',
+  kubernetes: 'Kubernetes',
+  aws: 'AWS',
+  terraform: 'Terraform',
+  docker: 'Docker',
+}
+
+const STACK_BY_FAMILY = {
+  frontend: ['react', 'next.js', 'vue', 'angular', 'svelte', 'typescript'],
+  backend: ['node.js', 'python', 'java', 'go', 'golang', 'c#'],
+  fullstack: ['react', 'node.js', 'next.js', 'typescript'],
+  mobile: ['react native', 'swift', 'kotlin', 'ios', 'android'],
+  data: ['python', 'sql', 'spark', 'dbt'],
+  devops: ['kubernetes', 'aws', 'terraform', 'docker'],
+}
+
+function normSkill(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9+#]/g, '')
+}
+
+export function stackSearchQuery(parsed, user) {
+  const base = searchQuery(parsed, user)
+  const family = resumeFamily({
+    titles: parsed?.titles,
+    skills: parsed?.skills,
+    summary: parsed?.summary,
+    headline: user?.headline,
+    target_roles: user?.target_roles,
+  })
+  const have = new Set((parsed?.skills || []).map((s) => normSkill(s)).filter(Boolean))
+  const preferred = STACK_BY_FAMILY[family] || STACK_BY_FAMILY.frontend
+  const hit = preferred.find((s) => have.has(normSkill(s)))
+  if (!hit) return base
+  const tech = STACK_LABEL[hit] || hit
+  const low = String(base).toLowerCase()
+  if (low.includes(tech.toLowerCase()) || low.includes(hit) || low.includes(normSkill(hit))) return base
+  return `${tech} ${base}`.replace(/\s+/g, ' ').trim().slice(0, 80)
+}
+
 export function searchQuery(parsed, user, fallback = 'software engineer') {
   const family = resumeFamily({
     titles: parsed?.titles,

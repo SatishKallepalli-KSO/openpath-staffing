@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { applyBrand, boardSearchLinks, isCandidateListing, isLiveApplyUrl, isTrustedUsListing, isUsaJob, jobMatchesQuery, linkedinSearchLinks, searchQuery } from '../src/job-feeds.js'
+import { applyBrand, boardSearchLinks, isCandidateListing, isLiveApplyUrl, isTrustedUsListing, isUsaJob, jobMatchesQuery, linkedinSearchLinks, searchQuery, stackSearchQuery } from '../src/job-feeds.js'
 
 describe('live job query filter', () => {
   it('keeps a software role for an engineer query', () => {
@@ -152,6 +152,29 @@ describe('apply urls and board search', () => {
     )
     assert.equal(q.includes('Halogen'), false)
     assert.equal(q, 'frontend engineer')
+  })
+
+  it('prefixes the main frontend skill so LinkedIn is not every frontend job', () => {
+    const parsed = {
+      titles: ['Frontend Engineer'],
+      skills: ['react', 'typescript', 'css'],
+    }
+    const user = { headline: '', target_roles: '' }
+    assert.equal(searchQuery(parsed, user), 'frontend engineer')
+    assert.equal(stackSearchQuery(parsed, user), 'React frontend engineer')
+    const links = linkedinSearchLinks(stackSearchQuery(parsed, user), 'United States')
+    assert.ok(links.every((l) => l.url.includes('React')))
+    assert.ok(links.every((l) => l.url.includes('frontend')))
+  })
+
+  it('uses Vue when that is the main frontend skill', () => {
+    assert.equal(
+      stackSearchQuery(
+        { titles: ['Frontend Engineer'], skills: ['vue', 'javascript'] },
+        { headline: '', target_roles: '' },
+      ),
+      'Vue frontend engineer',
+    )
   })
 
   it('keeps US Greenhouse roles and drops Remotive or overseas listings', () => {

@@ -26,6 +26,7 @@ type MatchesProps = {
   boardLinks?: BoardLink[]
   linkedinLinks?: BoardLink[]
   linkedinUrl?: string
+  searchQuery?: string
   appliedIds: number[]
   error: string
   busy: boolean
@@ -45,6 +46,7 @@ export function MatchesPortal({
   boardLinks,
   linkedinLinks,
   linkedinUrl,
+  searchQuery,
   appliedIds,
   error,
   busy,
@@ -72,8 +74,9 @@ export function MatchesPortal({
         <div className="board-links linkedin-fast">
           <h2>Apply faster on LinkedIn</h2>
           <p className="muted">
-            LinkedIn does not let us list their jobs inside SAVENTRA. These searches use your resume title,
-            newest posts first, Easy Apply, and early-applicant jobs with fewer people in line.
+            LinkedIn does not let us list their jobs inside SAVENTRA. These searches use your main stack
+            {searchQuery ? ` (${searchQuery})` : ' (for example React for a frontend resume)'}, newest posts first,
+            Easy Apply, and early-applicant jobs with fewer people in line.
           </p>
           {!linkedinUrl ? (
             <p className="muted">

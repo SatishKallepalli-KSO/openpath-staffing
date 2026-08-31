@@ -29,7 +29,7 @@ import { extractFromUpload, parsedOrThrow } from './resume.js'
 import { jobFamily, parseResume, rankJobs, resumeFamily } from './matching.js'
 import { suggestEdits } from './tailor.js'
 import { adzunaEnabled } from './adzuna.js'
-import { applyBrand, applyHost, boardSearchLinks, isCandidateListing, isLiveApplyUrl, isUsOnlyLocation, linkedinSearchLinks, liveFeedsEnabled, refreshLiveJobs, searchQuery } from './job-feeds.js'
+import { applyBrand, applyHost, boardSearchLinks, isCandidateListing, isLiveApplyUrl, isUsOnlyLocation, linkedinSearchLinks, liveFeedsEnabled, refreshLiveJobs, stackSearchQuery } from './job-feeds.js'
 import { rateLimit } from './rate-limit.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -310,7 +310,7 @@ app.post(
         await query('UPDATE users SET years_experience=$1 WHERE id=$2', [parsed.years, req.user.id])
       }
       await addActivity(req.user.id, 'resume', 'Uploaded resume', filename)
-      const q = searchQuery(parsed, req.user)
+      const q = stackSearchQuery(parsed, req.user)
       try {
         await refreshLiveJobs(q)
       } catch (err) {
@@ -364,7 +364,7 @@ app.get('/v1/matches', requireUser, async (req, res) => {
       return
     }
     const parsed = parsedFromResume(resume, req.user)
-    const q = String(req.query.q || searchQuery(parsed, req.user))
+    const q = String(req.query.q || stackSearchQuery(parsed, req.user))
     const feedMeta = {
       adzuna: 0,
       greenhouse: 0,
@@ -411,6 +411,7 @@ app.get('/v1/matches', requireUser, async (req, res) => {
       board_links: boardSearchLinks(q, req.user.location),
       linkedin_links: linkedinSearchLinks(q, req.user.location),
       linkedin_url: req.user.linkedin_url || '',
+      search_query: q,
       count: ranked.length,
       jobs: ranked.slice(0, 50).map(jobOut),
     })

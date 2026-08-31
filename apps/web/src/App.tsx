@@ -123,6 +123,7 @@ export default function App() {
     boardLinks: [] as BoardLink[],
     linkedinLinks: [] as BoardLink[],
     linkedinUrl: '',
+    searchQuery: '',
   })
   const [appliedIds, setAppliedIds] = useState<number[]>([])
   const [job, setJob] = useState<Job | null>(null)
@@ -187,6 +188,7 @@ export default function App() {
             boardLinks: data.board_links || [],
             linkedinLinks: data.linkedin_links || [],
             linkedinUrl: data.linkedin_url || '',
+            searchQuery: data.search_query || '',
           })
           setAppliedIds(apps.filter((row) => row.status === 'applied').map((row) => row.job_id))
         })
@@ -310,6 +312,7 @@ export default function App() {
         boardLinks: data.board_links || [],
         linkedinLinks: data.linkedin_links || [],
         linkedinUrl: data.linkedin_url || '',
+        searchQuery: data.search_query || '',
       })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not filter')
@@ -537,6 +540,7 @@ export default function App() {
             boardLinks={matchMeta.boardLinks}
             linkedinLinks={matchMeta.linkedinLinks}
             linkedinUrl={matchMeta.linkedinUrl}
+            searchQuery={matchMeta.searchQuery}
             appliedIds={appliedIds}
             error={error}
             busy={busy}

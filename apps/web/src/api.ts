@@ -202,6 +202,7 @@ export type MatchResult = {
   board_links?: BoardLink[]
   linkedin_links?: BoardLink[]
   linkedin_url?: string
+  search_query?: string
   count: number
   jobs: Job[]
 }
