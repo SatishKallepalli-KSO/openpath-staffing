@@ -66,6 +66,20 @@ describe('live job query filter', () => {
       ),
       true,
     )
+    assert.equal(
+      jobMatchesQuery(
+        {
+          title: 'Software Engineer',
+          company: 'Airbnb',
+          location: 'San Francisco, CA',
+          department: 'Engineering',
+          skills_csv: '',
+          description: 'Career posting on Greenhouse.',
+        },
+        'frontend engineer',
+      ),
+      true,
+    )
   })
 })
 

@@ -32,8 +32,8 @@ export function jobMatchesQuery(job, q) {
   const qFamily = roleFamily(q)
   const jFamily = jobFamily(job)
   if (qFamily === 'frontend') {
-    if (['backend', 'data', 'devops', 'qa', 'mobile'].includes(jFamily)) return false
-    return /frontend|front-end|front end|react|vue|angular|\bui\b|css/.test(hay)
+    if (['backend', 'data', 'devops', 'qa'].includes(jFamily)) return false
+    return true
   }
   if (qFamily === 'backend' && jFamily === 'frontend') return false
   const hits = tokens.filter((t) => hay.includes(t)).length

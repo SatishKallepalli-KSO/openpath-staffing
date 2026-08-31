@@ -871,6 +871,13 @@ textarea {
   margin: 0;
 }
 
+.empty-matches {
+  display: grid;
+  gap: 0.8rem;
+  justify-items: start;
+  margin: 0 0 1.4rem;
+}
+
 .diff-card {
   background: var(--surface);
   border: 1px solid var(--line);

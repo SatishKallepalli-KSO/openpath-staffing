@@ -25,7 +25,7 @@ import {
   signUser,
 } from './auth.js'
 import { extractFromUpload, parsedOrThrow } from './resume.js'
-import { parseResume, rankJobs } from './matching.js'
+import { jobFamily, parseResume, rankJobs, resumeFamily } from './matching.js'
 import { suggestEdits } from './tailor.js'
 import { adzunaEnabled } from './adzuna.js'
 import { applyBrand, applyHost, boardSearchLinks, isCandidateListing, isLiveApplyUrl, isUsOnlyLocation, liveFeedsEnabled, refreshLiveJobs, searchQuery } from './job-feeds.js'
@@ -74,6 +74,15 @@ function parseJson(value, fallback) {
   }
 }
 
+function withTimeout(promise, ms, fallback) {
+  return Promise.race([
+    promise,
+    new Promise((resolve) => {
+      setTimeout(() => resolve(fallback), ms)
+    }),
+  ])
+}
+
 function parsedFromResume(resume, user) {
   const live = parseResume(resume?.raw_text || '')
   const stored = parseJson(resume?.parsed_json, {})
@@ -99,6 +108,14 @@ function resumeOut(row) {
     parsed: parseJson(row.parsed_json, {}),
     text: row.raw_text,
   }
+}
+
+function keepRoleFamily(parsed, job) {
+  const rf = resumeFamily(parsed)
+  const jf = jobFamily(job)
+  if (rf === 'frontend' && ['backend', 'data', 'devops', 'qa'].includes(jf)) return false
+  if (rf === 'backend' && jf === 'frontend') return false
+  return true
 }
 
 function jobOut(row) {
@@ -346,26 +363,32 @@ app.get('/v1/matches', requireUser, async (req, res) => {
     }
     const parsed = parsedFromResume(resume, req.user)
     const q = String(req.query.q || searchQuery(parsed, req.user))
-    let feedMeta = {
+    const feedMeta = {
       adzuna: 0,
       greenhouse: 0,
       lever: 0,
       amazon: 0,
       nvidia: 0,
     }
-    try {
-      const live = await refreshLiveJobs(q)
-      feedMeta = live.sources || feedMeta
-    } catch (err) {
-      console.warn('Live job refresh skipped', err.message)
-    }
+    const live = await withTimeout(
+      refreshLiveJobs(q).catch((err) => {
+        console.warn('Live job refresh skipped', err.message)
+        return { sources: feedMeta }
+      }),
+      7000,
+      { sources: feedMeta },
+    )
+    const sources = live?.sources || feedMeta
     const jobs = await query('SELECT * FROM jobs ORDER BY id DESC LIMIT 500')
     const minScore = Number(req.query.min_score || 35)
     const remote = String(req.query.remote || '')
     const department = String(req.query.department || '')
     let ranked = rankJobs(parsed, jobs, { minScore: Number.isFinite(minScore) ? minScore : 35 }).filter(
-      (j) => isCandidateListing(j),
+      (j) => isCandidateListing(j) && keepRoleFamily(parsed, j),
     )
+    if (!ranked.length && (!Number.isFinite(minScore) || minScore >= 35)) {
+      ranked = rankJobs(parsed, jobs, { minScore: 20 }).filter((j) => isCandidateListing(j) && keepRoleFamily(parsed, j))
+    }
     ranked.sort((a, b) => {
       const liveDiff = Number(isLiveApplyUrl(b.source_url)) - Number(isLiveApplyUrl(a.source_url))
       if (liveDiff) return liveDiff
@@ -381,8 +404,8 @@ app.get('/v1/matches', requireUser, async (req, res) => {
     }
     res.json({
       resume_id: resume.id,
-      live_jobs: Object.values(feedMeta).some((n) => Number(n) > 0),
-      sources: feedMeta,
+      live_jobs: Object.values(sources).some((n) => Number(n) > 0),
+      sources,
       board_links: boardSearchLinks(q, req.user.location),
       count: ranked.length,
       jobs: ranked.slice(0, 50).map(jobOut),
@@ -600,8 +623,8 @@ app.get('/v1/dashboard', requireUser, async (req, res) => {
     if (resume) {
       const parsed = parsedFromResume(resume, req.user)
       const jobs = await query('SELECT * FROM jobs ORDER BY id DESC LIMIT 200')
-      topMatches = rankJobs(parsed, jobs, { minScore: 45 })
-        .filter((j) => isCandidateListing(j))
+      topMatches = rankJobs(parsed, jobs, { minScore: 35 })
+        .filter((j) => isCandidateListing(j) && keepRoleFamily(parsed, j))
         .slice(0, 4)
         .map(jobOut)
     }

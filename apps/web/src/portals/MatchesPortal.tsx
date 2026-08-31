@@ -31,6 +31,7 @@ type MatchesProps = {
   onOpen: (id: number) => void
   onApply: (job: Job) => void
   onBatchApply: () => void
+  onReplaceResume: () => void
 }
 
 export function MatchesPortal({
@@ -46,6 +47,7 @@ export function MatchesPortal({
   onOpen,
   onApply,
   onBatchApply,
+  onReplaceResume,
 }: MatchesProps) {
   const applied = new Set(appliedIds)
   return (
@@ -64,11 +66,9 @@ export function MatchesPortal({
         <div className="board-links">
           <h2>Search the big boards and career sites</h2>
           <p className="muted">
-      <p className="muted">
             LinkedIn, Indeed, and ZipRecruiter are where US recruiters post most. Those tiles open their
             search. Scored roles below are live US listings from Greenhouse, Lever, Amazon.jobs, and NVIDIA.
             Catalog sample jobs are not shown here.
-          </p>
           </p>
           <div className="board-card-grid">
             {boardLinks.map((link) => (
@@ -94,6 +94,9 @@ export function MatchesPortal({
         <button type="button" className="btn btn-gold" onClick={onBatchApply} disabled={busy || jobs.length === 0}>
           Open top apply pages
         </button>
+        <button type="button" className="btn btn-ghost" onClick={onReplaceResume} disabled={busy}>
+          Replace resume
+        </button>
       </div>
       <form className="filter-bar" onSubmit={onFilter}>
         <input name="search" placeholder="Title, company, skill" />
@@ -114,10 +117,16 @@ export function MatchesPortal({
       </form>
       {error ? <p className="form-error">{error}</p> : null}
       {jobs.length === 0 && !busy ? (
-        <p className="muted">
-          No live US listings above this match floor. Lower the floor or try a different title on your
-          profile.
-        </p>
+        <div className="empty-matches">
+          <p className="muted">
+            {error
+              ? 'We could not load roles. Replace your resume or try again.'
+              : 'No live US listings above this match floor yet. Replace your resume or lower the floor.'}
+          </p>
+          <button type="button" className="btn btn-primary" onClick={onReplaceResume}>
+            Replace resume
+          </button>
+        </div>
       ) : null}
       <ul className="card-grid">
         {jobs.map((job) => {

@@ -94,7 +94,17 @@ function hashFor(portal: Portal, extra?: Record<string, string>) {
 }
 
 function readToken(key: string) {
-  return sessionStorage.getItem(key) || ''
+  return localStorage.getItem(key) || sessionStorage.getItem(key) || ''
+}
+
+function writeToken(key: string, value: string) {
+  localStorage.setItem(key, value)
+  sessionStorage.removeItem(key)
+}
+
+function clearToken(key: string) {
+  localStorage.removeItem(key)
+  sessionStorage.removeItem(key)
 }
 
 export default function App() {
@@ -147,8 +157,8 @@ export default function App() {
     }
     fetchMe(token)
       .then(setUser)
-      .catch(() => {
-        sessionStorage.removeItem(TOKEN_KEY)
+        .catch(() => {
+        clearToken(TOKEN_KEY)
         setToken('')
         setUser(null)
       })
@@ -211,7 +221,7 @@ export default function App() {
         full_name: String(form.get('full_name') || ''),
       }
       const result = portal === 'signup' ? await signup(body) : await login(body)
-      sessionStorage.setItem(TOKEN_KEY, result.access_token)
+      writeToken(TOKEN_KEY, result.access_token)
       setToken(result.access_token)
       setUser(result.user)
       go('dashboard')
@@ -223,7 +233,7 @@ export default function App() {
   }
 
   function signOut() {
-    sessionStorage.removeItem(TOKEN_KEY)
+    clearToken(TOKEN_KEY)
     setToken('')
     setUser(null)
     go('home')
@@ -457,6 +467,9 @@ export default function App() {
               <button type="button" onClick={() => go('matches')}>
                 Roles
               </button>
+              <button type="button" onClick={() => go('resume')}>
+                Resume
+              </button>
               <button type="button" onClick={() => go('tracker')}>
                 Pipeline
               </button>
@@ -521,6 +534,7 @@ export default function App() {
             onOpen={(id) => go('job', { id: String(id) })}
             onApply={(job) => void applyMatch(job)}
             onBatchApply={() => void applyTopMatches()}
+            onReplaceResume={() => go('resume')}
           />
         ) : null}
         {portal === 'job' ? (
@@ -568,6 +582,7 @@ export default function App() {
               adminLogin(adminPin)
                 .then((res) => {
                   sessionStorage.setItem(ADMIN_KEY, res.access_token)
+                  localStorage.removeItem(ADMIN_KEY)
                   setAdminToken(res.access_token)
                   setError('')
                 })

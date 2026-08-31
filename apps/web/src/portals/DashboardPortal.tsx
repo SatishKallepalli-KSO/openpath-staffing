@@ -26,9 +26,14 @@ export function DashboardPortal({ data, error, onGo }: Props) {
           </p>
           <div className="hero-actions">
             {has_resume ? (
-              <button type="button" className="btn btn-gold" onClick={() => onGo('matches')}>
-                View matches
-              </button>
+              <>
+                <button type="button" className="btn btn-gold" onClick={() => onGo('matches')}>
+                  View matches
+                </button>
+                <button type="button" className="btn btn-ghost-light" onClick={() => onGo('resume')}>
+                  Replace resume
+                </button>
+              </>
             ) : (
               <button type="button" className="btn btn-gold" onClick={() => onGo('resume')}>
                 Upload resume

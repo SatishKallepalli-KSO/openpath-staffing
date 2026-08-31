@@ -62,9 +62,11 @@ export function ResumePortal({ resumes, error, busy, onUpload }: ResumeProps) {
       <header className="desk-mast">
         <div className="desk-mast-inner">
           <p className="eyebrow gold">The document</p>
-          <h1>Resume</h1>
+          <h1>{latest ? 'Replace resume' : 'Resume'}</h1>
           <p className="muted">
-            PDF, Word, or plain text. After you save, we search public job APIs and rank roles to this document.
+            {latest
+              ? 'Upload a new PDF, Word, or text file. We will re-read it and rank roles again.'
+              : 'PDF, Word, or plain text. After you save, we search public job APIs and rank roles to this document.'}
           </p>
         </div>
       </header>
@@ -79,7 +81,7 @@ export function ResumePortal({ resumes, error, busy, onUpload }: ResumeProps) {
         </label>
         {error ? <p className="form-error">{error}</p> : null}
         <button className="btn btn-primary" type="submit" disabled={busy}>
-          {busy ? 'Reading and searching roles…' : 'Save and find roles'}
+          {busy ? 'Reading and searching roles…' : latest ? 'Replace and find roles' : 'Save and find roles'}
         </button>
       </form>
       {latest ? (

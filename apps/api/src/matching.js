@@ -261,7 +261,8 @@ function familyCap(resumeFam, jobFam, job) {
   if (resumeFam === 'frontend' && jobFam === 'generic') {
     const hay = normalize(`${job?.title || ''} ${job?.skills_csv || ''} ${job?.description || ''}`)
     if (/react|vue|angular|css|html|frontend|\bui\b/.test(hay)) return 99
-    return 30
+    if (/\b(software engineer|software developer|swe|product engineer)\b/.test(normalize(job?.title || ''))) return 70
+    return 32
   }
   if (resumeFam === 'backend' && jobFam === 'generic') return 55
   if (['frontend', 'backend', 'mobile', 'data', 'devops'].includes(resumeFam) && resumeFam !== jobFam) {
@@ -461,6 +462,11 @@ function titleScore(resumeTitles, jobTitle) {
   if (resumeLooksIc(resumeTitles) && isLeadershipTitle(jobTitle)) {
     return Math.min(best, 0.12)
   }
+  if (resumeLooksIc(resumeTitles) && isIcTitle(jobTitle)) {
+    if (/\b(engineer|developer)\b/.test(job) && resumeTitles.some((t) => /\b(engineer|developer|front)\b/.test(normalize(t)))) {
+      best = Math.max(best, 0.48)
+    }
+  }
   return best
 }
 
@@ -513,7 +519,12 @@ export function scoreJob(resume, job) {
   if (resumeLooksIc(resume.titles || []) && isLeadershipTitle(job.title)) {
     score = Math.min(score, 28)
   }
-  score = Math.min(score, familyCap(resumeFamily(resume), jobFamily(job), job))
+  const rf = resumeFamily(resume)
+  const jf = jobFamily(job)
+  if (rf === 'frontend' && jf === 'generic' && /\b(software engineer|software developer|swe)\b/.test(normalize(job.title || ''))) {
+    score += 22
+  }
+  score = Math.min(score, familyCap(rf, jf, job))
 
   const missing = jobSkills.filter((s) => !resumeSkills.includes(s)).slice(0, 12)
   const matched = jobSkills.filter((s) => resumeSkills.includes(s)).slice(0, 12)

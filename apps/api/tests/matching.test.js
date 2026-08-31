@@ -168,4 +168,24 @@ Skills: HTML, CSS, JavaScript, TypeScript, React, Redux, Tailwind
     assert.ok(firmware.score < 35, `firmware scored ${firmware.score}`)
     assert.ok(fe.score > be.score)
   })
+
+  it('still shows generic software engineer roles for a frontend resume', () => {
+    const resume = parseResume(`
+Priya Shah
+Front End Developer
+Skills: HTML, CSS, JavaScript, TypeScript, React
+`)
+    resume.location = 'Austin, TX'
+    const swe = scoreJob(resume, {
+      title: 'Software Engineer',
+      company: 'Airbnb',
+      location: 'San Francisco, CA',
+      remote: 'hybrid',
+      description: 'Career posting on Greenhouse.',
+      requirements: '',
+      skills_csv: '',
+      seniority: 'mid',
+    })
+    assert.ok(swe.score >= 35, `generic SWE scored ${swe.score}`)
+  })
 })
