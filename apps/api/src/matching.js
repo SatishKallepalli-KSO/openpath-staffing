@@ -437,7 +437,7 @@ export function scoreJob(resume, job) {
     8 * seniority
 
   if (resumeLooksIc(resume.titles || []) && isLeadershipTitle(job.title)) {
-    score = Math.min(score, 40)
+    score = Math.min(score, 28)
   }
 
   const missing = jobSkills.filter((s) => !resumeSkills.includes(s)).slice(0, 12)

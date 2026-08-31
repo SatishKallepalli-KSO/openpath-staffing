@@ -37,7 +37,7 @@ export function isUsaJob(job) {
   const loc = String(job.location || '')
   if (!loc.trim() || /^(n\/a|na|none|unknown|not specified)$/i.test(loc.trim())) return false
   const nonUs =
-    /\b(germany|berlin|munich|india|bangalore|hyderabad|london|united kingdom|\buk\b|england|france|paris|netherlands|amsterdam|israel|tel aviv|australia|sydney|italy|milan|sweden|stockholm|poland|singapore|brazil|ireland|dublin|japan|tokyo|canada|toronto|mexico|spain|barcelona)\b/i
+    /\b(germany|berlin|munich|india|bangalore|hyderabad|london|united kingdom|\buk\b|england|france|paris|netherlands|amsterdam|israel|tel aviv|australia|aus|melbourne|sydney|italy|milan|sweden|stockholm|poland|singapore|brazil|ireland|dublin|japan|tokyo|canada|toronto|mexico|spain|barcelona)\b/i
   const us =
     /\b(united states|usa|u\.s\.a?|\bus\b|remote,? us|nationwide|california|new york|texas|washington|seattle|austin|boston|chicago|denver|atlanta|miami|colorado|georgia|florida|illinois|massachusetts|san francisco|san jose|los angeles|nyc|bay area)\b/i
   if (nonUs.test(loc) && !us.test(loc)) return false
@@ -46,7 +46,9 @@ export function isUsaJob(job) {
 
 export function isUsOnlyLocation(job) {
   if (!isUsaJob(job)) return false
-  return !/\b(canada|united kingdom|\buk\b|germany|india|israel|australia|ireland|mexico)\b/i.test(String(job.location || ''))
+  return !/\b(canada|united kingdom|\buk\b|germany|india|israel|australia|aus|ireland|mexico|melbourne)\b/i.test(
+    String(job.location || ''),
+  )
 }
 
 export const AGGREGATOR_SOURCES = new Set(['remotive', 'arbeitnow', 'themuse', 'remoteok', 'himalayas', 'jobicy'])

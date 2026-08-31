@@ -138,6 +138,14 @@ describe('apply urls and board search', () => {
     )
     assert.equal(
       isUsaJob({
+        location: 'Melbourne, Victoria, AUS',
+        source: 'amazon',
+        source_url: 'https://www.amazon.jobs/en/jobs/1',
+      }),
+      false,
+    )
+    assert.equal(
+      isUsaJob({
         location: 'N/A',
         source: 'greenhouse',
         source_url: 'https://job-boards.greenhouse.io/stripe/jobs/1',

@@ -99,7 +99,7 @@ Senior Software Engineer, Northwind Health, 2022 to present
       seniority: 'mid',
       source_url: 'https://boards.greenhouse.io/stripe/jobs/1?gh_jid=11111',
     })
-    assert.ok(director.score < 45, `director scored ${director.score}`)
+    assert.ok(director.score < 35, `director scored ${director.score}`)
     assert.ok(ic.score > director.score)
     assert.ok(ic.score >= 50, `ic scored ${ic.score}`)
   })
