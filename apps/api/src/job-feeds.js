@@ -1,5 +1,5 @@
 import { query, queryOne, nowIso } from './db.js'
-import { extractSkills, inferSeniority, isRoleTitle } from './matching.js'
+import { extractSkills, inferSeniority, isRoleTitle, jobFamily, resumeFamily, roleFamily } from './matching.js'
 import { adzunaEnabled, refreshAdzuna } from './adzuna.js'
 
 const FETCH_MS = 12000
@@ -29,6 +29,13 @@ export function jobMatchesQuery(job, q) {
   const tokens = tokensFromQuery(q)
   if (!tokens.length) return true
   const hay = `${job.title} ${job.company} ${job.location} ${job.department} ${job.skills_csv} ${job.description}`.toLowerCase()
+  const qFamily = roleFamily(q)
+  const jFamily = jobFamily(job)
+  if (qFamily === 'frontend') {
+    if (['backend', 'data', 'devops', 'qa', 'mobile'].includes(jFamily)) return false
+    return /frontend|front-end|front end|react|vue|angular|\bui\b|css/.test(hay)
+  }
+  if (qFamily === 'backend' && jFamily === 'frontend') return false
   const hits = tokens.filter((t) => hay.includes(t)).length
   return hits >= 1
 }
@@ -171,11 +178,26 @@ export function boardSearchLinks(q, location) {
 }
 
 export function searchQuery(parsed, user, fallback = 'software engineer') {
+  const family = resumeFamily({
+    titles: parsed?.titles,
+    skills: parsed?.skills,
+    summary: parsed?.summary,
+    headline: user?.headline,
+    target_roles: user?.target_roles,
+  })
+  const familyQuery = {
+    frontend: 'frontend engineer',
+    backend: 'backend engineer',
+    fullstack: 'full stack engineer',
+    mobile: 'mobile engineer',
+    data: 'data engineer',
+  }
+
   const headline = String(user?.headline || '')
     .replace(/\s+with\b.*/i, '')
     .trim()
     .slice(0, 60)
-  if (headline && isRoleTitle(headline)) return headline
+  if (headline && isRoleTitle(headline) && roleFamily(headline) !== 'generic') return headline
 
   const target = String(user?.target_roles || '')
     .split(',')[0]
@@ -186,8 +208,10 @@ export function searchQuery(parsed, user, fallback = 'software engineer') {
     if (/\b(full[\s-]?stack|front[\s-]?end|back[\s-]?end)\b/.test(targetLow) && !/\b(engineer|developer)\b/.test(targetLow)) {
       return `${target} engineer`.slice(0, 60)
     }
-    if (isRoleTitle(target)) return target
+    if (isRoleTitle(target) && roleFamily(target) !== 'generic') return target
   }
+
+  if (familyQuery[family]) return familyQuery[family]
 
   const role = (parsed?.titles || []).find((t) => isRoleTitle(t))
   if (role) {

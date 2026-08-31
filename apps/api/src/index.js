@@ -82,6 +82,8 @@ function parsedFromResume(resume, user) {
     ...live,
     location: user?.location || '',
     years: user?.years_experience || live.years || stored.years || 0,
+    headline: user?.headline || '',
+    target_roles: user?.target_roles || '',
   }
 }
 

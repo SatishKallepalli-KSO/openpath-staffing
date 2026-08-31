@@ -36,6 +36,37 @@ describe('live job query filter', () => {
       false,
     )
   })
+
+  it('drops backend roles when the search is frontend', () => {
+    assert.equal(
+      jobMatchesQuery(
+        {
+          title: 'Backend Engineer',
+          company: 'Harbor',
+          location: 'Remote',
+          department: 'Engineering',
+          skills_csv: 'java, kafka',
+          description: 'Build APIs',
+        },
+        'frontend engineer',
+      ),
+      false,
+    )
+    assert.equal(
+      jobMatchesQuery(
+        {
+          title: 'Frontend Engineer',
+          company: 'Harbor',
+          location: 'Remote',
+          department: 'Engineering',
+          skills_csv: 'react, typescript',
+          description: 'Build product UI',
+        },
+        'frontend engineer',
+      ),
+      true,
+    )
+  })
 })
 
 describe('apply urls and board search', () => {
@@ -91,8 +122,7 @@ describe('apply urls and board search', () => {
       { headline: '', target_roles: '' },
     )
     assert.equal(q.includes('Halogen'), false)
-    assert.ok(q.includes('react'))
-    assert.ok(q.includes('typescript'))
+    assert.equal(q, 'frontend engineer')
   })
 
   it('keeps US Greenhouse roles and drops Remotive or overseas listings', () => {

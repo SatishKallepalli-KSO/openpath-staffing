@@ -205,6 +205,71 @@ const TITLE_HINTS = [
   'associate',
 ]
 
+const FE_SKILLS = ['react', 'vue', 'angular', 'html', 'css', 'sass', 'tailwind', 'next.js']
+const BE_SKILLS = ['java', 'python', 'go', 'golang', 'spring', 'django', 'flask', 'fastapi', 'kafka', 'ruby', 'c++']
+
+export function roleFamily(text) {
+  const t = normalize(text)
+    .replace(/front[\s-]?end/g, 'frontend')
+    .replace(/back[\s-]?end/g, 'backend')
+    .replace(/full[\s-]?stack/g, 'fullstack')
+  if (/\b(firmware|secdevops|devops|sre|site reliability|platform engineer|infrastructure)\b/.test(t)) return 'devops'
+  if (/\b(data engineer|data scientist|machine learning|\bml\b|etl|analytics engineer)\b/.test(t)) return 'data'
+  if (/\b(ios|android|react native|mobile engineer)\b/.test(t)) return 'mobile'
+  if (/\b(frontend|ui engineer|ui developer|react developer|vue developer|angular)\b/.test(t)) return 'frontend'
+  if (/\b(backend|server engineer|api engineer)\b/.test(t)) return 'backend'
+  if (/\bfullstack\b/.test(t)) return 'fullstack'
+  if (/\b(qa\b|sdet|quality assurance|test engineer)\b/.test(t)) return 'qa'
+  return 'generic'
+}
+
+export function resumeFamily(resume) {
+  const titled = roleFamily(
+    `${(resume?.titles || []).join(' ')} ${resume?.headline || ''} ${resume?.target_roles || ''} ${resume?.summary || ''}`,
+  )
+  if (titled !== 'generic') return titled
+  const skills = new Set((resume?.skills || []).map((s) => normalize(s)))
+  const fe = FE_SKILLS.filter((s) => skills.has(s)).length
+  const be = BE_SKILLS.filter((s) => skills.has(s)).length
+  if (fe >= 2 && be === 0) return 'frontend'
+  if (fe >= 1 && be === 0 && (skills.has('javascript') || skills.has('typescript'))) return 'frontend'
+  if (fe >= 1 && be >= 1) return 'fullstack'
+  if (be >= 2 && fe === 0) return 'backend'
+  if (skills.has('react native') || skills.has('ios') || skills.has('android')) return 'mobile'
+  return 'generic'
+}
+
+export function jobFamily(job) {
+  const fromTitle = roleFamily(`${job?.title || ''} ${job?.department || ''}`)
+  if (fromTitle !== 'generic') return fromTitle
+  const blob = `${job?.title || ''} ${job?.skills_csv || ''} ${String(job?.description || '').slice(0, 500)} ${job?.requirements || ''}`
+  const fromBlob = roleFamily(blob)
+  if (fromBlob !== 'generic') return fromBlob
+  const skills = extractSkills(blob)
+  const fe = FE_SKILLS.filter((s) => skills.includes(s)).length
+  const be = BE_SKILLS.filter((s) => skills.includes(s)).length
+  if (fe >= 2 && be === 0) return 'frontend'
+  if (be >= 2 && fe === 0) return 'backend'
+  return 'generic'
+}
+
+function familyCap(resumeFam, jobFam, job) {
+  if (!resumeFam || resumeFam === 'generic') return 99
+  if (resumeFam === jobFam) return 99
+  if (resumeFam === 'fullstack' && (jobFam === 'frontend' || jobFam === 'backend' || jobFam === 'generic')) return 99
+  if (jobFam === 'fullstack' && (resumeFam === 'frontend' || resumeFam === 'backend')) return 62
+  if (resumeFam === 'frontend' && jobFam === 'generic') {
+    const hay = normalize(`${job?.title || ''} ${job?.skills_csv || ''} ${job?.description || ''}`)
+    if (/react|vue|angular|css|html|frontend|\bui\b/.test(hay)) return 99
+    return 30
+  }
+  if (resumeFam === 'backend' && jobFam === 'generic') return 55
+  if (['frontend', 'backend', 'mobile', 'data', 'devops'].includes(resumeFam) && resumeFam !== jobFam) {
+    return 28
+  }
+  return 99
+}
+
 const MONTH = /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b/i
 
 export function looksLikeProjectLine(line) {
@@ -258,10 +323,19 @@ export function extractTitles(text) {
     .map((l) => l.trim())
     .filter(Boolean)
   const titles = []
+  const phrase =
+    /\b((?:senior|staff|lead|jr\.?|junior)?\s*(?:front[\s-]?end|back[\s-]?end|full[\s-]?stack|ui|ux)?\s*(?:software\s+)?(?:engineer|developer|designer)s?)\b/gi
   for (const line of lines.slice(0, 80)) {
-    if (line.length <= 8 || line.length >= 90) continue
-    if (!isRoleTitle(line)) continue
-    titles.push(line.replace(/^[-•*\d.)\s]+/, '').slice(0, 80))
+    if (line.length <= 8) continue
+    if (line.length < 90 && isRoleTitle(line)) {
+      titles.push(line.replace(/^[-•*\d.)\s]+/, '').slice(0, 80))
+      continue
+    }
+    const found = line.match(phrase) || []
+    for (const hit of found) {
+      const clean = hit.trim()
+      if (clean.length >= 8) titles.push(clean.slice(0, 80))
+    }
   }
   return [...new Set(titles)].slice(0, 8)
 }
@@ -439,6 +513,7 @@ export function scoreJob(resume, job) {
   if (resumeLooksIc(resume.titles || []) && isLeadershipTitle(job.title)) {
     score = Math.min(score, 28)
   }
+  score = Math.min(score, familyCap(resumeFamily(resume), jobFamily(job), job))
 
   const missing = jobSkills.filter((s) => !resumeSkills.includes(s)).slice(0, 12)
   const matched = jobSkills.filter((s) => resumeSkills.includes(s)).slice(0, 12)
